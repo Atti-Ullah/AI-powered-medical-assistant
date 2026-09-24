@@ -4,208 +4,115 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import {
-  ChatBubbleBottomCenterTextIcon,
-  DocumentTextIcon,
-  ClipboardDocumentListIcon,
-  CalendarIcon,
   HeartIcon,
   BeakerIcon,
   UserIcon,
+  CalendarIcon,
+  DocumentTextIcon,
   DocumentArrowUpIcon,
   ChatBubbleLeftRightIcon,
   ChartBarIcon,
   UserPlusIcon,
-  MagnifyingGlassIcon,
-  ExclamationCircleIcon,
   PlusCircleIcon,
+  ShieldCheckIcon,
+  SparklesIcon,
+  ExclamationCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ArrowRightIcon,
+  ChatBubbleBottomCenterTextIcon,
 } from "@heroicons/react/24/outline";
 
 // Quick action links
 const quickActions = [
   {
+    name: "AI Doctor",
+    href: "/dashboard/patient/ai-doctor",
+    icon: ChatBubbleLeftRightIcon,
+    tile: "bg-secondary-600",
+    description: "Ask Medisynix anything",
+  },
+  {
     name: "Health Profile",
     href: "/dashboard/patient/profile",
     icon: UserIcon,
-    color: "bg-pink-500",
+    tile: "bg-brand-600",
+    description: "Update your vitals",
   },
   {
     name: "Book Appointment",
     href: "/dashboard/patient/appointments",
     icon: CalendarIcon,
-    color: "bg-purple-500",
-  },
-  {
-    name: "AI Doctor",
-    href: "/dashboard/patient/ai-doctor",
-    icon: ChatBubbleLeftRightIcon,
-    color: "bg-green-500",
-  },
-  {
-    name: "Find a Doctor",
-    href: "/dashboard/patient/find-doctor",
-    icon: UserPlusIcon,
-    color: "bg-orange-500",
+    tile: "bg-secondary-700",
+    description: "See a clinician",
   },
   {
     name: "AI Health Insights",
     href: "/dashboard/patient/analytics",
     icon: ChartBarIcon,
-    color: "bg-teal-500",
+    tile: "bg-brand-500",
+    description: "Trends and charts",
   },
   {
     name: "Upload Report",
     href: "/dashboard/patient/upload-report",
     icon: DocumentArrowUpIcon,
-    color: "bg-yellow-500",
+    tile: "bg-secondary-500",
+    description: "Get a plain-language summary",
   },
   {
     name: "My Records",
     href: "/dashboard/patient/records",
     icon: DocumentTextIcon,
-    color: "bg-indigo-500",
+    tile: "bg-brand-700",
+    description: "Lab reports & documents",
   },
   {
-    name: "My Medications",
-    href: "/dashboard/patient/medications",
-    icon: BeakerIcon,
-    color: "bg-red-500",
+    name: "Find a Doctor",
+    href: "/dashboard/patient/find-doctor",
+    icon: UserPlusIcon,
+    tile: "bg-brand-800",
+    description: "Browse specialists",
   },
 ];
 
-// Mock data for doctors by specialty
-const doctorSpecialties = [
+// Static demo of recent AI conversations (no chat history is persisted)
+const recentSessions = [
   {
-    id: "neurologist",
-    name: "Neurologist",
-    description: "Brain, spinal cord, and nervous system specialists",
+    id: 1,
+    title: "Persistent headaches after work",
+    lastActivity: "2 hours ago",
+    confidence: 94,
+    responseTime: "1.2s",
+    summary:
+      "Medisynix flagged tension-type headache and recommended rest, hydration, and a follow-up if pain worsens.",
   },
   {
-    id: "cardiologist",
-    name: "Cardiologist",
-    description: "Heart and cardiovascular system specialists",
+    id: 2,
+    title: "Booking a cardiology appointment",
+    lastActivity: "Yesterday",
+    confidence: 100,
+    responseTime: "0.8s",
+    summary:
+      "Found 3 available cardiologists near you and drafted a booking request for review.",
   },
   {
-    id: "dermatologist",
-    name: "Dermatologist",
-    description: "Skin, hair, and nail specialists",
-  },
-  { id: "oncologist", name: "Oncologist", description: "Cancer specialists" },
-  {
-    id: "psychiatrist",
-    name: "Psychiatrist",
-    description: "Mental health specialists",
-  },
-  {
-    id: "obgyn",
-    name: "Obstetrics & Gynaecology",
-    description: "Women's reproductive health specialists",
-  },
-  {
-    id: "ophthalmologist",
-    name: "Ophthalmologist",
-    description: "Eye and vision specialists",
-  },
-  {
-    id: "endocrinologist",
-    name: "Endocrinologist",
-    description: "Hormone and metabolism specialists",
-  },
-  {
-    id: "gastroenterologist",
-    name: "Gastroenterologist",
-    description: "Digestive system specialists",
-  },
-  {
-    id: "orthopedist",
-    name: "Orthopaedist",
-    description: "Bone and joint specialists",
-  },
-  {
-    id: "radiologist",
-    name: "Radiologist",
-    description: "Medical imaging specialists",
+    id: 3,
+    title: "Explaining my last blood test",
+    lastActivity: "3 days ago",
+    confidence: 91,
+    responseTime: "1.6s",
+    summary:
+      "Broken your CBC report into plain language with normal range comparisons for each marker.",
   },
 ];
-
-// Mock doctors data
-const doctorsBySpecialty = {
-  neurologist: [
-    {
-      id: 101,
-      name: "Dr. Sarah Johnson",
-      experience: "12 years",
-      rating: 4.8,
-      available: true,
-    },
-    {
-      id: 102,
-      name: "Dr. Michael Chen",
-      experience: "8 years",
-      rating: 4.6,
-      available: true,
-    },
-    {
-      id: 103,
-      name: "Dr. Emily Rodriguez",
-      experience: "15 years",
-      rating: 4.9,
-      available: false,
-    },
-  ],
-  cardiologist: [
-    {
-      id: 201,
-      name: "Dr. Robert Smith",
-      experience: "20 years",
-      rating: 4.9,
-      available: true,
-    },
-    {
-      id: 202,
-      name: "Dr. Jennifer Davis",
-      experience: "11 years",
-      rating: 4.7,
-      available: true,
-    },
-    {
-      id: 203,
-      name: "Dr. William Jones",
-      experience: "14 years",
-      rating: 4.5,
-      available: true,
-    },
-  ],
-  dermatologist: [
-    {
-      id: 301,
-      name: "Dr. Lisa Williams",
-      experience: "9 years",
-      rating: 4.8,
-      available: true,
-    },
-    {
-      id: 302,
-      name: "Dr. David Kim",
-      experience: "13 years",
-      rating: 4.9,
-      available: false,
-    },
-  ],
-  // Add more doctors for other specialties as needed
-};
 
 export default function PatientDashboardContent() {
   const { user } = useAuth();
-  // Add state for health metrics, appointments, and reports
   const [healthMetrics, setHealthMetrics] = useState([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Add state for doctor selection
-  const [selectedSpecialty, setSelectedSpecialty] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showDoctorSelection, setShowDoctorSelection] = useState(false);
 
   // Effect to load user data
   useEffect(() => {
@@ -233,10 +140,9 @@ export default function PatientDashboardContent() {
             }
           }
 
-          // Initialize empty metrics array
           const metrics = [];
 
-          // MongoDB stores IDs as ObjectId, so we need to ensure we're using the right ID
+          // MongoDB stores IDs as ObjectId, so ensure we use the right ID
           const userId = userData._id || userData.id;
 
           // Fetch health metrics from API
@@ -245,7 +151,6 @@ export default function PatientDashboardContent() {
             const healthResponse = await fetch(
               `/api/patient/get-health-metrics?userId=${userId}`
             );
-
             if (healthResponse.ok) {
               const responseData = await healthResponse.json();
               healthData = responseData.data;
@@ -255,172 +160,105 @@ export default function PatientDashboardContent() {
           }
 
           // Fetch appointments from API
-          const appointmentsResponse = await fetch(
-            `/api/patient/appointments?userId=${userId}`
-          );
           let appointmentsData = [];
-
-          if (appointmentsResponse.ok) {
-            const responseData = await appointmentsResponse.json();
-            appointmentsData = responseData.data || [];
-          } else {
-            // Fallback to user data
+          try {
+            const appointmentsResponse = await fetch(
+              `/api/patient/appointments?userId=${userId}`
+            );
+            if (appointmentsResponse.ok) {
+              const responseData = await appointmentsResponse.json();
+              appointmentsData = responseData.data || [];
+            } else {
+              appointmentsData = userData.appointments || [];
+            }
+          } catch (error) {
+            console.error("Error fetching appointments:", error);
             appointmentsData = userData.appointments || [];
           }
 
           // Use health metrics from API if available, otherwise fallback to user data
-          if (healthData && healthData.current) {
-            const currentMetrics = healthData.current;
+          const source = healthData && healthData.current ? healthData.current : userData;
 
-            // Add blood pressure if available
-            if (currentMetrics.bloodPressure) {
-              metrics.push({
-                id: 1,
-                name: "Blood Pressure",
-                value: currentMetrics.bloodPressure,
-                status: getBPStatus(currentMetrics.bloodPressure),
-                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
-                icon: HeartIcon,
-                color: getStatusColor(
-                  getBPStatus(currentMetrics.bloodPressure)
-                ),
-              });
-            }
+          const lastUpdated = healthData && healthData.current
+            ? new Date(healthData.current.timestamp).toLocaleDateString()
+            : userData.lastMetricsUpdate || "Not updated";
 
-            // Add heart rate if available
-            if (currentMetrics.heartRate) {
-              metrics.push({
-                id: 2,
-                name: "Heart Rate",
-                value: `${currentMetrics.heartRate} bpm`,
-                status: getHeartRateStatus(currentMetrics.heartRate),
-                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
-                icon: HeartIcon,
-                color: getStatusColor(
-                  getHeartRateStatus(currentMetrics.heartRate)
-                ),
-              });
-            }
+          // Blood pressure
+          if (source.bloodPressure) {
+            metrics.push({
+              id: 1,
+              name: "Blood Pressure",
+              value: source.bloodPressure,
+              unit: "mmHg",
+              status: getBPStatus(source.bloodPressure),
+              date: lastUpdated,
+              icon: HeartIcon,
+            });
+          }
 
-            // Add glucose level if available
-            if (currentMetrics.glucoseLevel) {
-              metrics.push({
-                id: 3,
-                name: "Glucose Level",
-                value: `${currentMetrics.glucoseLevel} mg/dL`,
-                status: getGlucoseStatus(currentMetrics.glucoseLevel),
-                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
-                icon: BeakerIcon,
-                color: getStatusColor(
-                  getGlucoseStatus(currentMetrics.glucoseLevel)
-                ),
-              });
-            }
+          // Heart rate
+          if (source.heartRate) {
+            metrics.push({
+              id: 2,
+              name: "Heart Rate",
+              value: String(source.heartRate),
+              unit: "bpm",
+              status: getHeartRateStatus(source.heartRate),
+              date: lastUpdated,
+              icon: HeartIcon,
+            });
+          }
 
-            // Add weight if available
-            if (currentMetrics.weight && currentMetrics.height) {
-              const bmi = calculateBMI(
-                currentMetrics.weight,
-                currentMetrics.height
-              );
-              metrics.push({
-                id: 4,
-                name: "Weight & BMI",
-                value: `${currentMetrics.weight} kg (BMI: ${bmi.toFixed(1)})`,
-                status: getBMIStatus(bmi),
-                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
-                icon: UserIcon,
-                color: getStatusColor(getBMIStatus(bmi)),
-              });
-            } else if (currentMetrics.weight) {
-              metrics.push({
-                id: 4,
-                name: "Weight",
-                value: `${currentMetrics.weight} kg`,
-                status: "info",
-                date: new Date(currentMetrics.timestamp).toLocaleDateString(),
-                icon: UserIcon,
-                color: "text-blue-500",
-              });
-            }
-          } else {
-            // Fallback to user data if API doesn't return metrics
-            // Add blood pressure if available
-            if (userData.bloodPressure) {
-              metrics.push({
-                id: 1,
-                name: "Blood Pressure",
-                value: userData.bloodPressure,
-                status: getBPStatus(userData.bloodPressure),
-                date: userData.lastMetricsUpdate || "Not updated",
-                icon: HeartIcon,
-                color: getStatusColor(getBPStatus(userData.bloodPressure)),
-              });
-            }
+          // Glucose level
+          if (source.glucoseLevel) {
+            metrics.push({
+              id: 3,
+              name: "Glucose Level",
+              value: String(source.glucoseLevel),
+              unit: "mg/dL",
+              status: getGlucoseStatus(source.glucoseLevel),
+              date: lastUpdated,
+              icon: BeakerIcon,
+            });
+          }
 
-            // Add heart rate if available
-            if (userData.heartRate) {
-              metrics.push({
-                id: 2,
-                name: "Heart Rate",
-                value: `${userData.heartRate} bpm`,
-                status: getHeartRateStatus(userData.heartRate),
-                date: userData.lastMetricsUpdate || "Not updated",
-                icon: HeartIcon,
-                color: getStatusColor(getHeartRateStatus(userData.heartRate)),
-              });
-            }
-
-            // Add glucose level if available
-            if (userData.glucoseLevel) {
-              metrics.push({
-                id: 3,
-                name: "Glucose Level",
-                value: `${userData.glucoseLevel} mg/dL`,
-                status: getGlucoseStatus(userData.glucoseLevel),
-                date: userData.lastMetricsUpdate || "Not updated",
-                icon: BeakerIcon,
-                color: getStatusColor(getGlucoseStatus(userData.glucoseLevel)),
-              });
-            }
-
-            // Add weight if available
-            if (userData.weight && userData.height) {
-              const bmi = calculateBMI(userData.weight, userData.height);
-              metrics.push({
-                id: 4,
-                name: "Weight & BMI",
-                value: `${userData.weight} kg (BMI: ${bmi.toFixed(1)})`,
-                status: getBMIStatus(bmi),
-                date: userData.lastMetricsUpdate || "Not updated",
-                icon: UserIcon,
-                color: getStatusColor(getBMIStatus(bmi)),
-              });
-            } else if (userData.weight) {
-              metrics.push({
-                id: 4,
-                name: "Weight",
-                value: `${userData.weight} kg`,
-                status: "info",
-                date: userData.lastMetricsUpdate || "Not updated",
-                icon: UserIcon,
-                color: "text-blue-500",
-              });
-            }
+          // Weight / BMI
+          if (source.weight && source.height) {
+            const bmi = calculateBMI(source.weight, source.height);
+            metrics.push({
+              id: 4,
+              name: "Weight & BMI",
+              value: `${source.weight} kg`,
+              unit: `BMI ${bmi.toFixed(1)}`,
+              status: getBMIStatus(bmi),
+              date: lastUpdated,
+              icon: UserIcon,
+            });
+          } else if (source.weight) {
+            metrics.push({
+              id: 4,
+              name: "Weight",
+              value: `${source.weight} kg`,
+              unit: "",
+              status: "info",
+              date: lastUpdated,
+              icon: UserIcon,
+            });
           }
 
           setHealthMetrics(metrics);
 
-          // Set upcoming appointments (filter out cancelled ones)
+          // Upcoming appointments (filter out cancelled/old ones)
           setUpcomingAppointments(
-            appointmentsData.filter((apt) => apt.status === "upcoming") || []
+            appointmentsData.filter(
+              (apt) => apt.status === "upcoming" || apt.status === "scheduled"
+            ) || []
           );
 
-          // Load reports if any (keep as is for now)
+          // Reports
           setRecentReports(userData.reports || []);
         } catch (error) {
           console.error("Error fetching patient data:", error);
-          // If API calls fail, we already have the fallback to localStorage above
         } finally {
           setLoading(false);
         }
@@ -466,327 +304,516 @@ export default function PatientDashboardContent() {
     return "obese";
   }
 
-  function getStatusColor(status) {
-    switch (status) {
-      case "normal":
-        return "text-green-500";
-      case "elevated":
-        return "text-yellow-500";
-      case "high":
-        return "text-red-500";
-      case "low":
-        return "text-yellow-500";
-      case "underweight":
-        return "text-yellow-500";
-      case "overweight":
-        return "text-yellow-500";
-      case "obese":
-        return "text-red-500";
-      default:
-        return "text-blue-500";
+  // Synthesize a simple AI health signal from the metrics we have.
+  // This is a demonstration of explainability — every claim is traceable
+  // back to a specific metric so a clinician can audit it.
+  function deriveHealthSignal() {
+    if (healthMetrics.length === 0) {
+      return {
+        status: "Insufficient data",
+        tone: "neutral",
+        confidence: 0,
+        reasons: [
+          "Add vitals such as blood pressure, heart rate, or glucose to your profile so Medisynix can build a health signal.",
+        ],
+        recommendations: [
+          "Complete your health profile",
+          "Ask the AI Assistant about any concerns",
+        ],
+      };
     }
+
+    const reasons = [];
+    const recommendations = [];
+    let abnormal = 0;
+
+    healthMetrics.forEach((metric) => {
+      switch (metric.status) {
+        case "normal":
+          reasons.push(
+            `Your ${metric.name.toLowerCase()} (${metric.value}${
+              metric.unit ? " " + metric.unit : ""
+            }) is within a healthy range.`
+          );
+          break;
+        case "elevated":
+        case "high":
+          abnormal++;
+          reasons.push(
+            `Your ${metric.name.toLowerCase()} (${metric.value}${
+              metric.unit ? " " + metric.unit : ""
+            }) is ${metric.status} — higher than the typical resting range.`
+          );
+          recommendations.push(
+            `Ask Medisynix to explain your ${metric.name.toLowerCase()} reading`
+          );
+          break;
+        case "low":
+          abnormal++;
+          reasons.push(
+            `Your ${metric.name.toLowerCase()} (${metric.value}${
+              metric.unit ? " " + metric.unit : ""
+            }) is below the typical resting range.`
+          );
+          break;
+        default:
+          reasons.push(
+            `Your ${metric.name.toLowerCase()} is ${metric.value}${
+              metric.unit ? " " + metric.unit : ""
+            }.`
+          );
+      }
+    });
+
+    const status =
+      abnormal === 0 ? "Stable" : abnormal <= 1 ? "Attention suggested" : "Needs follow-up";
+    const confidence = abnormal === 0 ? 94 : 88 - abnormal * 4;
+
+    recommendations.push(
+      abnormal === 0
+        ? "Keep a weekly record of your vitals"
+        : "Book a check-up if readings repeat over 3 days",
+      "Reviews are informational only — confirm with a clinician"
+    );
+
+    return { status, tone: abnormal === 0 ? "ok" : "warn", confidence, reasons, recommendations };
   }
 
-  // Filter doctors based on search query
-  const filteredDoctors = selectedSpecialty
-    ? doctorsBySpecialty[selectedSpecialty]?.filter((doctor) =>
-        doctor.name.toLowerCase().includes(searchQuery.toLowerCase())
-      ) || []
-    : [];
-
-  // Get the user's first name
   const firstName = user?.name?.split(" ")[0] || "Patient";
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+
+  const signal = deriveHealthSignal();
+  const nextAppointment = upcomingAppointments[0];
 
   return (
-    <div>
-      {/* Dashboard header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {firstName}'s Dashboard
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Welcome, {firstName}! Here's your health overview.
-        </p>
-      </div>
+    <div className="space-y-8">
+      {/* Greeting header */}
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-secondary-800 p-6 text-white shadow-card sm:p-8">
+        <div
+          className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-secondary-400/20 blur-3xl"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute -bottom-24 left-1/3 h-56 w-56 rounded-full bg-brand-400/20 blur-3xl"
+          aria-hidden="true"
+        />
+        <div className="relative">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-brand-100/80">
+                {greeting} — patient portal
+              </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                {firstName}&apos;s Health Overview
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-brand-100/90">
+                Your clinical assistant summarized the latest signals below.
+                Everything is traceable and reviewed with a human-first care
+                model.
+              </p>
+            </div>
+            <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white">
+              <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
+              Verified patient account
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Quick actions */}
-      <div className="mb-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Quick actions</h2>
+          <span className="hidden text-sm text-muted sm:block">
+            {healthMetrics.length > 0
+              ? `${healthMetrics.length} active health metrics`
+              : "Add vitals to unlock insights"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-7">
           {quickActions.map((action) => (
             <Link
               key={action.name}
               href={action.href}
-              className="relative rounded-lg p-4 flex flex-col items-center text-center hover:bg-gray-50 transition-colors"
+              className="card card-hover group flex flex-col items-center gap-2.5 rounded-xl p-4 text-center"
             >
               <div
-                className={`p-2 rounded-full ${action.color} text-white mb-3`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full ${action.tile} text-white shadow-sm transition-transform group-hover:scale-110`}
               >
-                <action.icon className="h-6 w-6" aria-hidden="true" />
+                <action.icon className="h-5 w-5" aria-hidden="true" />
               </div>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-xs font-semibold text-ink">
                 {action.name}
+              </span>
+              <span className="text-[11px] leading-tight text-muted">
+                {action.description}
               </span>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        {/* Health metrics */}
-        <div>
-          <h2 className="text-lg font-medium text-gray-900 mb-4">
-            Health Metrics
-          </h2>
-          <div className="overflow-hidden bg-white shadow sm:rounded-md">
-            {loading ? (
-              <div className="p-6 text-center">
-                <p className="text-gray-500">Loading health metrics...</p>
-              </div>
-            ) : healthMetrics.length > 0 ? (
-              <ul role="list" className="divide-y divide-gray-200">
-                {healthMetrics.map((metric) => (
-                  <li key={metric.id}>
-                    <div className="flex items-center px-4 py-4 sm:px-6">
-                      <div className="flex min-w-0 flex-1 items-center">
-                        <div className="flex-shrink-0">
-                          <metric.icon
-                            className={`h-10 w-10 ${metric.color}`}
-                            aria-hidden="true"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1 px-4">
-                          <p className="text-sm font-medium text-gray-900">
-                            {metric.name}
-                          </p>
-                          <div className="flex items-center">
-                            <p className="truncate text-sm text-gray-500">
-                              {metric.value}
-                            </p>
-                            <span
-                              className={`ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                                metric.status === "normal"
-                                  ? "bg-green-100 text-green-800"
-                                  : metric.status === "elevated"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : metric.status === "high"
-                                  ? "bg-red-100 text-red-800"
-                                  : metric.status === "low"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : metric.status === "underweight"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : metric.status === "overweight"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : metric.status === "obese"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-blue-100 text-blue-800"
-                              }`}
-                            >
-                              {metric.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right text-sm text-gray-500">
-                        <p>Last updated</p>
-                        <p>{metric.date}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-8 text-center">
-                <ExclamationCircleIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No health metrics available
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Add your health metrics like blood pressure, heart rate, and
-                  weight to see them here.
+      {/* Health metrics strip */}
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-ink">Health metrics</h2>
+          <Link
+            href="/dashboard/patient/profile"
+            className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+          >
+            <PlusCircleIcon className="h-4 w-4" aria-hidden="true" />
+            Update profile
+          </Link>
+        </div>
+        {loading ? (
+          <div className="card rounded-xl p-8 text-center text-sm text-muted">
+            Loading your latest vitals…
+          </div>
+        ) : healthMetrics.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {healthMetrics.map((metric) => (
+              <div key={metric.id} className="card rounded-xl p-5">
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`flex h-9 w-9 items-center justify-center rounded-full ${
+                      statusChip(metric.status).bg
+                    }`}
+                  >
+                    <metric.icon
+                      className={`h-5 w-5 ${statusChip(metric.status).text}`}
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <StatusBadge status={metric.status} />
+                </div>
+                <p className="mt-3 text-sm font-medium text-secondary-700">
+                  {metric.name}
                 </p>
-                <Link
-                  href="/dashboard/patient/profile"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  <PlusCircleIcon className="h-5 w-5 mr-2" />
-                  Update Health Profile
-                </Link>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <p className="text-2xl font-bold tracking-tight text-ink">
+                    {metric.value}
+                  </p>
+                  {metric.unit && (
+                    <p className="text-xs text-muted">{metric.unit}</p>
+                  )}
+                </div>
+                <p className="mt-2 text-[11px] text-muted">
+                  Updated {metric.date}
+                </p>
               </div>
-            )}
+            ))}
+          </div>
+        ) : (
+          <div className="card rounded-xl p-8 text-center">
+            <ExclamationCircleIcon className="mx-auto h-10 w-10 text-muted" />
+            <h3 className="mt-3 text-base font-semibold text-ink">
+              No health metrics yet
+            </h3>
+            <p className="mt-1 text-sm text-muted">
+              Add your blood pressure, heart rate, and weight to unlock the AI
+              health signal.
+            </p>
+            <Link href="/dashboard/patient/profile" className="btn btn-primary mt-5">
+              Update health profile
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* AI health signal (explainability) + upcoming appointment */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="card rounded-2xl p-6 lg:col-span-2">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                <SparklesIcon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h2 className="text-lg font-semibold text-ink">
+                AI health signal
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatusBadge status={signal.tone} override={signal.status} />
+              {signal.confidence > 0 && (
+                <span className="glass text-xs font-semibold text-secondary-800">
+                  {signal.confidence}% confidence
+                </span>
+              )}
+            </div>
+          </div>
+
+          {signal.confidence > 0 && (
+            <div className="mt-5">
+              <div className="flex justify-between text-[11px] font-medium uppercase tracking-wide text-muted">
+                <span>Signal strength</span>
+                <span>{signal.confidence}%</span>
+              </div>
+              <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-brand-600 to-secondary-500"
+                  style={{ width: `${signal.confidence}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
+            <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+              <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
+              How this was reached
+            </h3>
+            <ul className="mt-3 space-y-2.5">
+              {signal.reasons.map((reason, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-ink">
+                  <CheckCircleIcon
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary-600"
+                    aria-hidden="true"
+                  />
+                  {reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-6 rounded-xl bg-surface p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Suggested next steps
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {signal.recommendations.map((rec, i) => (
+                <span
+                  key={i}
+                  className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink"
+                >
+                  {rec}
+                </span>
+              ))}
+            </div>
+            <p className="mt-4 text-[11px] leading-relaxed text-muted">
+              This signal is informational and generated from data you provide.
+              It is not a diagnosis — always confirm with a licensed clinician.
+              See the public <Link href="/#disclaimer" className="underline">disclaimer</Link>.
+            </p>
           </div>
         </div>
 
-        {/* Upcoming appointments */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-medium text-gray-900">
-              Upcoming Appointments
+        <div className="card flex flex-col rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-ink">
+              Upcoming appointment
             </h2>
             <Link
               href="/dashboard/patient/appointments"
-              className="text-sm font-medium text-primary-600 hover:text-primary-500"
+              className="text-sm font-medium text-brand-600 hover:text-brand-700"
             >
               View all
             </Link>
           </div>
-          <div className="overflow-hidden bg-white shadow sm:rounded-md">
-            {loading ? (
-              <div className="p-6 text-center">
-                <p className="text-gray-500">Loading appointments...</p>
+
+          {loading ? (
+            <p className="mt-6 text-sm text-muted">Checking your schedule…</p>
+          ) : nextAppointment ? (
+            <div className="mt-5 flex flex-1 flex-col">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary-600/10 text-secondary-700">
+                  <CalendarIcon className="h-6 w-6" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    {nextAppointment.doctor || "Doctor visit"}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {nextAppointment.specialty || "General consultation"}
+                  </p>
+                </div>
               </div>
-            ) : upcomingAppointments.length > 0 ? (
-              <ul role="list" className="divide-y divide-gray-200">
-                {upcomingAppointments.map((appointment) => (
-                  <li key={appointment.id}>
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-primary-600">
-                          {appointment.doctor}
-                        </p>
-                        <div className="flex flex-shrink-0 ml-2">
-                          <p className="inline-flex rounded-full bg-green-100 px-2 text-xs font-semibold leading-5 text-green-800">
-                            {appointment.specialty}
-                          </p>
-                        </div>
+              <div className="mt-4 rounded-xl bg-surface p-4">
+                <p className="flex items-center gap-2 text-sm text-ink">
+                  <CalendarIcon className="h-4 w-4 text-brand-600" aria-hidden="true" />
+                  {nextAppointment.date}
+                </p>
+                <p className="mt-1.5 flex items-center gap-2 text-sm text-ink">
+                  <ClockIcon className="h-4 w-4 text-brand-600" aria-hidden="true" />
+                  {nextAppointment.time}
+                </p>
+              </div>
+              <Link
+                href="/dashboard/patient/ai-doctor"
+                className="btn btn-secondary mt-auto"
+              >
+                Prepare with the AI Assistant
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-5 flex flex-1 flex-col items-center justify-center text-center">
+              <CalendarIcon className="h-10 w-10 text-muted" aria-hidden="true" />
+              <p className="mt-3 text-sm font-medium text-ink">
+                No upcoming appointments
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Book a session with a clinician near you.
+              </p>
+              <Link
+                href="/dashboard/patient/appointments"
+                className="btn btn-primary mt-5"
+              >
+                Book appointment
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Recent AI sessions + medical reports */}
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="card rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-ink">
+              Recent AI conversations
+            </h2>
+            <Link
+              href="/dashboard/patient/ai-doctor"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              Open assistant
+              <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <ul className="mt-4 space-y-3">
+            {recentSessions.map((session) => (
+              <li key={session.id}>
+                <Link
+                  href="/dashboard/patient/ai-doctor"
+                  className="group block rounded-xl border border-border p-4 transition-colors hover:bg-surface"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                        <ChatBubbleBottomCenterTextIcon
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
                       </div>
-                      <div className="mt-2 sm:flex sm:justify-between">
-                        <div className="sm:flex">
-                          <CalendarIcon className="h-5 w-5 text-gray-400 mr-1.5" />
-                          <p className="flex items-center text-sm text-gray-500">
-                            {appointment.date} at {appointment.time}
-                          </p>
-                        </div>
-                        <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                          <Link
-                            href="/dashboard/patient/appointments"
-                            className="rounded bg-primary-600 px-2 py-1 text-xs font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-                          >
-                            Reschedule
-                          </Link>
-                        </div>
+                      <div>
+                        <p className="text-sm font-semibold text-ink group-hover:text-brand-700">
+                          {session.title}
+                        </p>
+                        <p className="text-[11px] text-muted">
+                          {session.lastActivity} · answered in {session.responseTime}
+                        </p>
                       </div>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="p-8 text-center">
-                <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No upcoming appointments
-                </h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  You don't have any upcoming appointments scheduled. Book one
-                  with our healthcare providers.
-                </p>
-                <Link
-                  href="/dashboard/patient/appointments"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
-                >
-                  <CalendarIcon className="h-5 w-5 mr-2" />
-                  Book Appointment
+                    <span className="glass shrink-0 text-[11px] font-semibold text-secondary-800">
+                      {session.confidence}%
+                    </span>
+                  </div>
+                  <p className="mt-2.5 text-xs leading-relaxed text-muted">
+                    {session.summary}
+                  </p>
                 </Link>
-              </div>
-            )}
-          </div>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
 
-      {/* Recent medical reports */}
-      <div className="mt-8">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-900">
-            Recent Medical Reports
-          </h2>
-          <Link
-            href="/dashboard/patient/records"
-            className="text-sm font-medium text-primary-600 hover:text-primary-500"
-          >
-            View all
-          </Link>
-        </div>
-        <div className="overflow-hidden bg-white shadow sm:rounded-md">
+        <div className="card rounded-2xl p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-ink">Medical reports</h2>
+            <Link
+              href="/dashboard/patient/records"
+              className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
+            >
+              View all
+              <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
           {loading ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-500">Loading reports...</p>
-            </div>
+            <p className="mt-4 text-sm text-muted">Loading reports…</p>
           ) : recentReports.length > 0 ? (
-            <ul role="list" className="divide-y divide-gray-200">
-              {recentReports.map((report) => (
+            <ul className="mt-4 space-y-3">
+              {recentReports.slice(0, 4).map((report) => (
                 <li key={report.id}>
                   <Link
                     href={`/dashboard/patient/records/${report.id}`}
-                    className="block hover:bg-gray-50"
+                    className="flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:bg-surface"
                   >
-                    <div className="px-4 py-4 sm:px-6">
-                      <div className="flex items-center justify-between">
-                        <p className="truncate text-sm font-medium text-primary-600">
-                          {report.name}
-                        </p>
-                        <div className="ml-2 flex flex-shrink-0">
-                          <p className="inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800">
-                            {report.type}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex justify-between">
-                        <div className="sm:flex">
-                          <p className="flex items-center text-sm text-gray-500">
-                            {report.date}
-                          </p>
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <DocumentTextIcon className="h-5 w-5 text-gray-400 mr-1.5" />
-                          <p>View Report</p>
-                        </div>
-                      </div>
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                      <DocumentTextIcon className="h-5 w-5" aria-hidden="true" />
                     </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-ink">
+                        {report.name}
+                      </p>
+                      <p className="text-[11px] text-muted">
+                        {report.type} · {report.date}
+                      </p>
+                    </div>
+                    <ArrowRightIcon className="h-4 w-4 text-muted" aria-hidden="true" />
                   </Link>
                 </li>
               ))}
             </ul>
           ) : (
-            <div className="p-8 text-center">
-              <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No medical reports
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                No medical reports have been uploaded to your account yet.
+            <div className="mt-4 flex flex-col items-center rounded-xl bg-surface p-8 text-center">
+              <DocumentArrowUpIcon className="h-10 w-10 text-muted" aria-hidden="true" />
+              <p className="mt-3 text-sm font-medium text-ink">
+                No reports uploaded yet
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Upload a lab report and Medisynix will translate it into plain
+                language.
               </p>
               <Link
                 href="/dashboard/patient/upload-report"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700"
+                className="btn btn-accent mt-5"
               >
-                <DocumentArrowUpIcon className="h-5 w-5 mr-2" />
-                Upload Report
+                Upload report
               </Link>
             </div>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }
 
-function BrainIcon(props) {
+// Render a small colored status badge
+function StatusBadge({ status, override }) {
+  const label = override || status;
+  const palette = {
+    ok: "bg-secondary-100 text-secondary-800",
+    warn: "bg-amber-100 text-amber-800",
+    danger: "bg-destructive-100 text-destructive-700",
+    neutral: "bg-muted text-muted.foreground",
+    normal: "bg-secondary-100 text-secondary-800",
+    elevated: "bg-amber-100 text-amber-800",
+    high: "bg-destructive-100 text-destructive-700",
+    low: "bg-amber-100 text-amber-800",
+    underweight: "bg-amber-100 text-amber-800",
+    overweight: "bg-amber-100 text-amber-800",
+    obese: "bg-destructive-100 text-destructive-700",
+    info: "bg-brand-100 text-brand-800",
+  };
+  const cls = palette[status] || palette.neutral;
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${cls}`}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-      />
-    </svg>
+      {label}
+    </span>
   );
+}
+
+// Icon chip palette for metric tiles
+function statusChip(status) {
+  const map = {
+    normal: { bg: "bg-secondary-100", text: "text-secondary-700" },
+    elevated: { bg: "bg-amber-100", text: "text-amber-600" },
+    high: { bg: "bg-destructive-100", text: "text-destructive-600" },
+    low: { bg: "bg-amber-100", text: "text-amber-600" },
+    info: { bg: "bg-brand-100", text: "text-brand-700" },
+  };
+  return map[status] || map.info;
 }

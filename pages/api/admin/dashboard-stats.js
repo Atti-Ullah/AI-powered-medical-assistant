@@ -1,6 +1,7 @@
 import dbConnect from '../../../lib/db';
 import User from '../../../models/User';
 import Appointment from '../../../models/Appointment';
+import { getDashboardStats, getRecentUsers } from '../../../lib/static-data';
 
 export default async function handler(req, res) {
   // Only allow GET method
@@ -10,13 +11,13 @@ export default async function handler(req, res) {
 
   try {
     await dbConnect();
-    
+
     // Get counts from database
     const totalUsers = await User.countDocuments();
     const activeDoctors = await User.countDocuments({ userType: 'doctor' });
     const activePatients = await User.countDocuments({ userType: 'patient' });
     const consultations = await Appointment.countDocuments({ status: { $ne: 'cancelled' } });
-    
+
     // Get recent users
     const recentUsers = await User.find()
       .sort({ createdAt: -1 })
@@ -27,10 +28,10 @@ export default async function handler(req, res) {
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         type: user.userType,
-        status: 'active', // For simplicity, all users are active
-        date: new Date(user.createdAt).toISOString().split('T')[0] // Format date as YYYY-MM-DD
+        status: 'active',
+        date: new Date(user.createdAt).toISOString().split('T')[0]
       })));
-    
+
     // Return the data
     return res.status(200).json({
       success: true,
@@ -41,10 +42,28 @@ export default async function handler(req, res) {
       recentUsers
     });
   } catch (error) {
-    console.error('Error getting dashboard stats:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to get dashboard stats'
+    console.error('Error getting dashboard stats from DB:', error.message);
+
+    // Fallback: serve aggregate stats from the static demo dataset so the
+    // admin dashboard remains functional without a live database connection.
+    const stats = getDashboardStats();
+    const recentUsers = getRecentUsers(5).map((user) => ({
+      id: user.id,
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      email: user.email,
+      type: user.userType,
+      status: 'active',
+      date: (user.createdAt || new Date().toISOString()).split('T')[0],
+    }));
+
+    return res.status(200).json({
+      success: true,
+      fallback: true,
+      totalUsers: stats.totalUsers,
+      activeDoctors: stats.activeDoctors,
+      activePatients: stats.activePatients,
+      consultations: stats.totalAppointments,
+      recentUsers,
     });
   }
 } 

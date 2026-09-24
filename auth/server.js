@@ -1,3 +1,6 @@
+// Polyfill for Node versions that removed the deprecated `SlowBuffer`
+require("buffer").SlowBuffer = require("buffer").SlowBuffer || require("buffer").Buffer;
+
 const express = require("express");
 const cors = require("cors");
 const root = require("path").join(__dirname, "client", "build");

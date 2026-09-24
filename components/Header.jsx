@@ -17,9 +17,10 @@ export default function Header() {
     const defaultNav = [
       { name: "Home", href: "/" },
       { name: "Features", href: "/#features" },
-      { name: "Testimonials", href: "/#testimonials" },
+      { name: "How It Works", href: "/#how-it-works" },
+      { name: "Assistant", href: "/#assistant" },
+      { name: "Trust", href: "/#disclaimer" },
       { name: "Contact", href: "/#contact" },
-      { name: "Documents", href: "/#documents" },
     ];
 
     // If user is logged in, add dashboard link specific to their type

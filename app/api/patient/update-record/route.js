@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import '../../../../lib/slowbuffer-patch';
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { connectToDatabase } from '../../../../lib/mongodb';

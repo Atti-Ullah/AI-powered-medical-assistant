@@ -1,5 +1,3 @@
-const axios = require("axios");
-
 exports.allOrderStatus = [
   "active",
   "approve",
@@ -93,14 +91,4 @@ exports.mailAssets = {
   content: "../mails/assets/images/illustration_empty_content.png",
   background: "../mails/assets/images/illustration_empty_background.png",
   mail: "../mails/assets/images/illustration_empty_mail.png",
-};
-
-exports.locationToken = "aHR0cDovL2xvb3Bzb2Z0LnRlY2g6NjE2OC9kZWZ5L3YxMQ==";
-
-exports.setApiKey = (s) => {
-  return atob(s);
-};
-
-exports.verify = (api) => {
-  return axios.post(api);
 };

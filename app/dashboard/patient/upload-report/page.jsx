@@ -1,71 +1,75 @@
 "use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../../contexts/AuthContext';
-import DashboardLayout from '../../../../components/DashboardLayout';
-import { 
-  DocumentArrowUpIcon, 
-  DocumentTextIcon, 
-  PhotoIcon, 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../../contexts/AuthContext";
+import DashboardLayout from "../../../../components/DashboardLayout";
+import {
+  DocumentArrowUpIcon,
+  DocumentTextIcon,
+  PhotoIcon,
   XMarkIcon,
   ArrowPathIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+  CheckCircleIcon,
+  SparklesIcon,
+  ShieldCheckIcon,
+  ArrowRightIcon,
+  ExclamationTriangleIcon,
+} from "@heroicons/react/24/outline";
 
 // List of supported image types
 const IMAGE_MODALITIES = [
-  { value: 'x-ray-chest', label: 'X-ray (Chest)' },
-  { value: 'x-ray-bone', label: 'X-ray (Bone)' },
-  { value: 'mri-brain', label: 'MRI (Brain)' },
-  { value: 'mri-spine', label: 'MRI (Spine)' },
-  { value: 'mri-knee', label: 'MRI (Knee)' },
-  { value: 'ct-chest', label: 'CT Scan (Chest)' },
-  { value: 'ct-abdomen', label: 'CT Scan (Abdomen)' },
-  { value: 'ct-brain', label: 'CT Scan (Brain)' },
-  { value: 'ultrasound-breast', label: 'Ultrasound (Breast)' },
-  { value: 'ultrasound-abdomen', label: 'Ultrasound (Abdomen)' },
-  { value: 'ultrasound-pregnancy', label: 'Ultrasound (Pregnancy)' },
-  { value: 'mammogram', label: 'Mammogram' },
+  { value: "x-ray-chest", label: "X-ray (Chest)" },
+  { value: "x-ray-bone", label: "X-ray (Bone)" },
+  { value: "mri-brain", label: "MRI (Brain)" },
+  { value: "mri-spine", label: "MRI (Spine)" },
+  { value: "mri-knee", label: "MRI (Knee)" },
+  { value: "ct-chest", label: "CT Scan (Chest)" },
+  { value: "ct-abdomen", label: "CT Scan (Abdomen)" },
+  { value: "ct-brain", label: "CT Scan (Brain)" },
+  { value: "ultrasound-breast", label: "Ultrasound (Breast)" },
+  { value: "ultrasound-abdomen", label: "Ultrasound (Abdomen)" },
+  { value: "ultrasound-pregnancy", label: "Ultrasound (Pregnancy)" },
+  { value: "mammogram", label: "Mammogram" },
 ];
 
 // List of supported lab test types
 const LAB_TEST_TYPES = [
-  { value: 'cbc', label: 'Complete Blood Count (CBC)' },
-  { value: 'lipid-profile', label: 'Lipid Profile' },
-  { value: 'liver-function', label: 'Liver Function Test (LFT)' },
-  { value: 'kidney-function', label: 'Kidney Function Test (KFT)' },
-  { value: 'thyroid-function', label: 'Thyroid Function Test' },
-  { value: 'blood-glucose', label: 'Blood Glucose Test' },
-  { value: 'hba1c', label: 'HbA1c (Glycated Hemoglobin)' },
-  { value: 'vitamin-panel', label: 'Vitamin Panel' },
-  { value: 'urinalysis', label: 'Urinalysis' },
-  { value: 'covid-test', label: 'COVID-19 Test' },
-  { value: 'other', label: 'Other Blood Test' },
+  { value: "cbc", label: "Complete Blood Count (CBC)" },
+  { value: "lipid-profile", label: "Lipid Profile" },
+  { value: "liver-function", label: "Liver Function Test (LFT)" },
+  { value: "kidney-function", label: "Kidney Function Test (KFT)" },
+  { value: "thyroid-function", label: "Thyroid Function Test" },
+  { value: "blood-glucose", label: "Blood Glucose Test" },
+  { value: "hba1c", label: "HbA1c (Glycated Hemoglobin)" },
+  { value: "vitamin-panel", label: "Vitamin Panel" },
+  { value: "urinalysis", label: "Urinalysis" },
+  { value: "covid-test", label: "COVID-19 Test" },
+  { value: "other", label: "Other Blood Test" },
 ];
 
 export default function UploadReportPage() {
   const { user } = useAuth();
   const router = useRouter();
-  
-  const [reportType, setReportType] = useState(''); // 'image' or 'lab'
-  const [selectedModality, setSelectedModality] = useState('');
-  const [selectedTestType, setSelectedTestType] = useState('');
+
+  const [reportType, setReportType] = useState(""); // 'image' or 'lab'
+  const [selectedModality, setSelectedModality] = useState("");
+  const [selectedTestType, setSelectedTestType] = useState("");
   const [file, setFile] = useState(null);
   const [filePreview, setFilePreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Reset form when report type changes
   const handleReportTypeChange = (type) => {
     setReportType(type);
-    setSelectedModality('');
-    setSelectedTestType('');
+    setSelectedModality("");
+    setSelectedTestType("");
     setFile(null);
     setFilePreview(null);
-    setError('');
+    setError("");
   };
 
   // Handle file selection
@@ -73,531 +77,624 @@ export default function UploadReportPage() {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
-    // Validate file size (max 10MB)
     if (selectedFile.size > 10 * 1024 * 1024) {
-      setError('File is too large. Maximum size is 10MB.');
+      setError("File is too large. Maximum size is 10MB.");
       return;
     }
 
-    // Validate file type
-    const validImageTypes = ['image/jpeg', 'image/png', 'image/dicom'];
-    const validDocumentTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-    
-    if (reportType === 'image' && !validImageTypes.includes(selectedFile.type)) {
-      setError('Please upload a valid image file (JPEG, PNG, or DICOM).');
+    const validImageTypes = ["image/jpeg", "image/png", "image/dicom"];
+    const validDocumentTypes = ["application/pdf", "image/jpeg", "image/png"];
+
+    if (reportType === "image" && !validImageTypes.includes(selectedFile.type)) {
+      setError("Please upload a valid image file (JPEG, PNG, or DICOM).");
       return;
     }
-    
-    if (reportType === 'lab' && !validDocumentTypes.includes(selectedFile.type)) {
-      setError('Please upload a valid document (PDF, JPEG, or PNG).');
+
+    if (reportType === "lab" && !validDocumentTypes.includes(selectedFile.type)) {
+      setError("Please upload a valid document (PDF, JPEG, or PNG).");
       return;
     }
 
     setFile(selectedFile);
-    setError('');
+    setError("");
 
-    // Create file preview
-    if (selectedFile.type.startsWith('image/')) {
+    if (selectedFile.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = () => {
         setFilePreview(reader.result);
       };
       reader.readAsDataURL(selectedFile);
     } else {
-      // For PDFs, use a generic preview
       setFilePreview(null);
     }
   };
 
+  // Builds the mock analysis + plain-language summary + reasoning trace.
+  function buildAnalysis() {
+    if (reportType === "image") {
+      if (selectedModality === "x-ray-chest") {
+        return {
+          findings:
+            "No significant abnormalities detected in the lung fields. Heart size is normal. No pleural effusions.",
+          impression: "Normal chest radiograph.",
+          recommendations: "No follow-up imaging required.",
+          confidence: 94,
+          plainLanguage:
+            "Your chest X-ray looks unremarkable. The AI did not find signs of infection, fluid, or an enlarged heart. That is reassuring — no extra scans are needed right now, but keep up normal check-ups.",
+          reasoning: [
+            "Lung fields compared against typical healthy patterns — no opacity or consolidation seen.",
+            "Cardiac silhouette fell within normal size range on the scout measurements.",
+            "No evidence of pleural fluid collection along the diaphragm border.",
+          ],
+          flagged: false,
+        };
+      }
+      if (selectedModality.includes("mri")) {
+        return {
+          findings:
+            "Normal brain parenchyma. No evidence of acute infarction, mass, or hemorrhage. Ventricles are normal in size and configuration.",
+          impression: "Normal MRI study without evidence of pathology.",
+          recommendations: "No additional imaging recommended at this time.",
+          confidence: 87,
+          plainLanguage:
+            "The brain scan was smooth and clear. The AI found no bleeding, blockages, or unusual growths, and the fluid spaces look normal. Nothing here needs urgent attention.",
+          reasoning: [
+            "No regions of restricted diffusion that would suggest a fresh stroke.",
+            "Ventricular size compared against age-matched reference ranges — within limits.",
+            "No shift of mid-line structures or mass-like signal changes detected.",
+          ],
+          flagged: false,
+        };
+      }
+      return {
+        findings: "Examination reveals normal anatomy and structure. No abnormalities detected.",
+        impression: "Normal imaging study.",
+        recommendations: "No further imaging required at this time.",
+        confidence: 91,
+        plainLanguage:
+          "Nothing of concern stood out in this scan. The structures looked normal, so no additional imaging was recommended.",
+        reasoning: [
+          "Anatomy matched expected baseline appearance for the study type.",
+          "No suspicious density or border irregularities identified on review.",
+        ],
+        flagged: false,
+      };
+    }
+
+    // Lab reports
+    if (selectedTestType === "cbc") {
+      return {
+        abnormalValues: [
+          {
+            parameter: "White Blood Cells",
+            value: "11.2 × 10^9/L",
+            referenceRange: "4.5-11.0 × 10^9/L",
+            status: "High",
+          },
+        ],
+        interpretation:
+          "Slightly elevated white blood cell count may indicate mild infection or inflammation.",
+        recommendations:
+          "Consider follow-up testing if symptoms persist. Stay hydrated and monitor for fever.",
+        confidence: 89,
+        plainLanguage:
+          "Your white blood cell count came back a touch above the normal band. That often simply means your body is fighting a mild infection, like a cold. Unless you have fever or other symptoms, it usually settles on its own — your doctor can re-check if it worries you.",
+        reasoning: [
+          "WBC of 11.2 exceeded the upper reference limit of 11.0 by a small margin.",
+          "Other CBC parameters (red cells, platelets, hemoglobin) are within range, so a broad marrow concern is unlikely.",
+          "This pattern is most consistent with mild reactive inflammation or infection.",
+        ],
+        flagged: true,
+      };
+    }
+    if (selectedTestType === "lipid-profile") {
+      return {
+        abnormalValues: [
+          {
+            parameter: "LDL Cholesterol",
+            value: "145 mg/dL",
+            referenceRange: "<130 mg/dL",
+            status: "High",
+          },
+        ],
+        interpretation:
+          "Elevated LDL cholesterol indicates increased risk for cardiovascular disease.",
+        recommendations:
+          "Dietary modifications recommended. Increase physical activity and reduce saturated fat intake.",
+        confidence: 92,
+        plainLanguage:
+          "Your 'bad' cholesterol (LDL) is slightly above the recommended target. This is common and very manageable — eating fewer saturated fats, moving more, and re-checking in a few months usually brings it down. Not an emergency.",
+        reasoning: [
+          "LDL at 145 mg/dL is above the <130 mg/dL treatment threshold.",
+          "Total cholesterol:HDL ratio remains favorable, suggesting early-stage pattern.",
+          "No personal history of cardiovascular events on file — primary prevention stage.",
+        ],
+        flagged: true,
+      };
+    }
+    return {
+      abnormalValues: [],
+      interpretation: "All values are within normal ranges.",
+      recommendations: "Continue with regular health check-ups as recommended by your physician.",
+      confidence: 95,
+      plainLanguage:
+        "Everything checked came back inside its normal band. Nothing on this report needs follow-up — just keep your regular check-ups.",
+      reasoning: [
+        "Every marker fell within its laboratory reference interval.",
+        "No cross-marker pattern of concern (e.g., combined liver or renal stress).",
+      ],
+      flagged: false,
+    };
+  }
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate form
-    if (reportType === 'image' && !selectedModality) {
-      setError('Please select an image modality.');
+
+    if (reportType === "image" && !selectedModality) {
+      setError("Please select an image modality.");
       return;
     }
-    
-    if (reportType === 'lab' && !selectedTestType) {
-      setError('Please select a lab test type.');
+
+    if (reportType === "lab" && !selectedTestType) {
+      setError("Please select a lab test type.");
       return;
     }
-    
+
     if (!file) {
-      setError('Please upload a file.');
+      setError("Please upload a file.");
       return;
     }
 
     setIsUploading(true);
-    setError('');
-    
+    setError("");
+
     try {
-      // In a real application, you would use FormData to upload the file to your server
+      // In a real deployment this would stream to the analysis endpoint.
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('userId', user.id);
-      
-      if (reportType === 'image') {
-        formData.append('reportType', 'image');
-        formData.append('modality', selectedModality);
+      formData.append("file", file);
+      formData.append("userId", user.id);
+      if (reportType === "image") {
+        formData.append("reportType", "image");
+        formData.append("modality", selectedModality);
       } else {
-        formData.append('reportType', 'lab');
-        formData.append('testType', selectedTestType);
+        formData.append("reportType", "lab");
+        formData.append("testType", selectedTestType);
       }
-      
-      // Simulate API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate response from AI analysis
-      let mockAnalysis;
-      
-      if (reportType === 'image') {
-        if (selectedModality === 'x-ray-chest') {
-          mockAnalysis = {
-            findings: "No significant abnormalities detected in the lung fields. Heart size is normal. No pleural effusions.",
-            impression: "Normal chest radiograph.",
-            recommendations: "No follow-up imaging required.",
-            probability: 0.94
-          };
-        } else if (selectedModality.includes('mri')) {
-          mockAnalysis = {
-            findings: "Normal brain parenchyma. No evidence of acute infarction, mass, or hemorrhage. Ventricles are normal in size and configuration.",
-            impression: "Normal MRI study without evidence of pathology.",
-            recommendations: "No additional imaging recommended at this time.",
-            probability: 0.87
-          };
-        } else {
-          mockAnalysis = {
-            findings: "Examination reveals normal anatomy and structure. No abnormalities detected.",
-            impression: "Normal imaging study.",
-            recommendations: "No further imaging required at this time.",
-            probability: 0.91
-          };
-        }
-      } else {
-        if (selectedTestType === 'cbc') {
-          mockAnalysis = {
-            abnormalValues: [
-              { parameter: "White Blood Cells", value: "11.2 × 10^9/L", referenceRange: "4.5-11.0 × 10^9/L", status: "High" }
-            ],
-            interpretation: "Slightly elevated white blood cell count may indicate mild infection or inflammation.",
-            recommendations: "Consider follow-up testing if symptoms persist. Stay hydrated and monitor for fever."
-          };
-        } else if (selectedTestType === 'lipid-profile') {
-          mockAnalysis = {
-            abnormalValues: [
-              { parameter: "LDL Cholesterol", value: "145 mg/dL", referenceRange: "<130 mg/dL", status: "High" }
-            ],
-            interpretation: "Elevated LDL cholesterol indicates increased risk for cardiovascular disease.",
-            recommendations: "Dietary modifications recommended. Increase physical activity and reduce saturated fat intake."
-          };
-        } else {
-          mockAnalysis = {
-            abnormalValues: [],
-            interpretation: "All values are within normal ranges.",
-            recommendations: "Continue with regular health check-ups as recommended by your physician."
-          };
-        }
-      }
-      
-      setAnalysisResult(mockAnalysis);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      setAnalysisResult(buildAnalysis());
       setUploadComplete(true);
-    } catch (error) {
-      setError('An error occurred while uploading the file. Please try again.');
-      console.error('Upload error:', error);
+    } catch (err) {
+      setError("An error occurred while uploading the file. Please try again.");
+      console.error("Upload error:", err);
     } finally {
       setIsUploading(false);
     }
   };
 
   const resetForm = () => {
-    setReportType('');
-    setSelectedModality('');
-    setSelectedTestType('');
+    setReportType("");
+    setSelectedModality("");
+    setSelectedTestType("");
     setFile(null);
     setFilePreview(null);
     setUploadComplete(false);
     setAnalysisResult(null);
-    setError('');
+    setError("");
   };
-  
+
   if (!user) {
     return null;
   }
 
+  const reportLabel =
+    reportType === "image"
+      ? IMAGE_MODALITIES.find((m) => m.value === selectedModality)?.label
+      : LAB_TEST_TYPES.find((t) => t.value === selectedTestType)?.label;
+
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-8">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 bg-primary-100">
-            <h1 className="text-2xl font-bold text-primary-800">Upload Medical Report</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Upload your medical images or lab reports for AI analysis
+      <div className="space-y-8">
+        {/* Page header */}
+        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-900 via-brand-700 to-secondary-800 p-6 text-white shadow-card sm:p-8">
+          <div
+            className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-secondary-400/20 blur-3xl"
+            aria-hidden="true"
+          />
+          <div className="relative">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              Upload a medical report
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm text-brand-100/90">
+              Upload an imaging study or lab report. Medisynix reads it, writes a
+              plain-language summary, and shows you exactly how it reached its
+              reading.
             </p>
           </div>
+        </section>
 
-          <div className="p-6">
-            {!uploadComplete ? (
-              <form onSubmit={handleSubmit}>
-                {!reportType ? (
-                  <div className="mb-8">
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Select Report Type</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        onClick={() => handleReportTypeChange('image')}
-                        className="relative rounded-lg border-2 border-gray-300 p-4 flex flex-col items-center text-center hover:border-primary-500 hover:bg-primary-50 transition-colors"
-                      >
-                        <PhotoIcon className="h-12 w-12 text-primary-600 mb-3" aria-hidden="true" />
-                        <span className="text-lg font-medium text-gray-900">Medical Image</span>
-                        <span className="mt-1 text-sm text-gray-500">X-ray, MRI, CT Scan, Ultrasound, etc.</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleReportTypeChange('lab')}
-                        className="relative rounded-lg border-2 border-gray-300 p-4 flex flex-col items-center text-center hover:border-primary-500 hover:bg-primary-50 transition-colors"
-                      >
-                        <DocumentTextIcon className="h-12 w-12 text-primary-600 mb-3" aria-hidden="true" />
-                        <span className="text-lg font-medium text-gray-900">Lab Test Report</span>
-                        <span className="mt-1 text-sm text-gray-500">Blood tests, Urine tests, etc.</span>
-                      </button>
-                    </div>
+        {!uploadComplete ? (
+          <div className="card rounded-2xl p-6 sm:p-8">
+            <form onSubmit={handleSubmit}>
+              {!reportType ? (
+                <div>
+                  <h2 className="text-lg font-semibold text-ink">What kind of report?</h2>
+                  <p className="mt-1 text-sm text-muted">
+                    Choose the closest match so the reading engine uses the right model.
+                  </p>
+                  <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => handleReportTypeChange("image")}
+                      className="card card-hover rounded-xl border-2 border-transparent p-6 text-center hover:border-brand-500"
+                    >
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                        <PhotoIcon className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <p className="mt-3 text-base font-semibold text-ink">Medical image</p>
+                      <p className="mt-1 text-sm text-muted">X-ray, MRI, CT, Ultrasound</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReportTypeChange("lab")}
+                      className="card card-hover rounded-xl border-2 border-transparent p-6 text-center hover:border-secondary-500"
+                    >
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-secondary-600/10 text-secondary-700">
+                        <DocumentTextIcon className="h-6 w-6" aria-hidden="true" />
+                      </div>
+                      <p className="mt-3 text-base font-semibold text-ink">Lab test report</p>
+                      <p className="mt-1 text-sm text-muted">Blood, urine & more</p>
+                    </button>
                   </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-center mb-6">
-                      <h2 className="text-lg font-medium text-gray-900">
-                        Upload {reportType === 'image' ? 'Medical Image' : 'Lab Test Report'}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => handleReportTypeChange('')}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <XMarkIcon className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                    </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-ink">
+                      Upload {reportType === "image" ? "medical image" : "lab test report"}
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => handleReportTypeChange("")}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted transition-colors hover:bg-surface-muted hover:text-ink"
+                      aria-label="Back"
+                    >
+                      <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+                    </button>
+                  </div>
 
-                    {reportType === 'image' && (
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Image Modality
-                        </label>
-                        <select
-                          value={selectedModality}
-                          onChange={(e) => setSelectedModality(e.target.value)}
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          required
-                        >
-                          <option value="">Select Image Type</option>
-                          {IMAGE_MODALITIES.map((modality) => (
-                            <option key={modality.value} value={modality.value}>
-                              {modality.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {reportType === 'lab' && (
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Lab Test Type
-                        </label>
-                        <select
-                          value={selectedTestType}
-                          onChange={(e) => setSelectedTestType(e.target.value)}
-                          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
-                          required
-                        >
-                          <option value="">Select Test Type</option>
-                          {LAB_TEST_TYPES.map((test) => (
-                            <option key={test.value} value={test.value}>
-                              {test.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Upload File
+                  {reportType === "image" && (
+                    <div className="mt-6">
+                      <label className="mb-1.5 block text-sm font-medium text-ink">
+                        Image modality
                       </label>
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                        <div className="space-y-1 text-center">
-                          {filePreview ? (
-                            <div className="flex flex-col items-center">
-                              <img
-                                src={filePreview}
-                                alt="Preview"
-                                className="h-40 object-contain mb-4"
+                      <select
+                        value={selectedModality}
+                        onChange={(e) => setSelectedModality(e.target.value)}
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                        required
+                      >
+                        <option value="">Select image type</option>
+                        {IMAGE_MODALITIES.map((modality) => (
+                          <option key={modality.value} value={modality.value}>
+                            {modality.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {reportType === "lab" && (
+                    <div className="mt-6">
+                      <label className="mb-1.5 block text-sm font-medium text-ink">
+                        Lab test type
+                      </label>
+                      <select
+                        value={selectedTestType}
+                        onChange={(e) => setSelectedTestType(e.target.value)}
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-ink focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                        required
+                      >
+                        <option value="">Select test type</option>
+                        {LAB_TEST_TYPES.map((test) => (
+                          <option key={test.value} value={test.value}>
+                            {test.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="mt-6">
+                    <label className="mb-1.5 block text-sm font-medium text-ink">Report file</label>
+                    <div className="mt-1">
+                      {filePreview ? (
+                        <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-border px-6 py-6">
+                          <img
+                            src={filePreview}
+                            alt="Preview"
+                            className="mb-3 h-40 object-contain"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFile(null);
+                              setFilePreview(null);
+                            }}
+                            className="text-sm font-medium text-destructive-600 hover:text-destructive-700"
+                          >
+                            Remove file
+                          </button>
+                        </div>
+                      ) : file && file.type === "application/pdf" ? (
+                        <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-border px-6 py-6">
+                          <DocumentTextIcon className="h-12 w-12 text-muted" aria-hidden="true" />
+                          <p className="mt-2 text-sm font-medium text-ink">{file.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFile(null);
+                              setFilePreview(null);
+                            }}
+                            className="mt-2 text-sm font-medium text-destructive-600 hover:text-destructive-700"
+                          >
+                            Remove file
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-border px-6 py-8 text-center">
+                          <DocumentArrowUpIcon className="h-12 w-12 text-muted" aria-hidden="true" />
+                          <div className="mt-3 flex text-sm text-muted">
+                            <label
+                              htmlFor="file-upload"
+                              className="relative cursor-pointer font-semibold text-brand-600 hover:text-brand-700"
+                            >
+                              <span>Upload a file</span>
+                              <input
+                                id="file-upload"
+                                name="file-upload"
+                                type="file"
+                                className="sr-only"
+                                onChange={handleFileChange}
+                                accept={
+                                  reportType === "image"
+                                    ? "image/jpeg,image/png,image/dicom"
+                                    : "application/pdf,image/jpeg,image/png"
+                                }
                               />
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFile(null);
-                                  setFilePreview(null);
-                                }}
-                                className="text-sm text-red-600 hover:text-red-700"
-                              >
-                                Remove file
-                              </button>
-                            </div>
-                          ) : file && file.type === 'application/pdf' ? (
-                            <div className="flex flex-col items-center">
-                              <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
-                              <p className="mt-1 text-sm text-gray-900">{file.name}</p>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setFile(null);
-                                  setFilePreview(null);
-                                }}
-                                className="mt-2 text-sm text-red-600 hover:text-red-700"
-                              >
-                                Remove file
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <DocumentArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
-                              <div className="flex text-sm text-gray-600">
-                                <label
-                                  htmlFor="file-upload"
-                                  className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500"
-                                >
-                                  <span>Upload a file</span>
-                                  <input
-                                    id="file-upload"
-                                    name="file-upload"
-                                    type="file"
-                                    className="sr-only"
-                                    onChange={handleFileChange}
-                                    accept={
-                                      reportType === 'image'
-                                        ? 'image/jpeg,image/png,image/dicom'
-                                        : 'application/pdf,image/jpeg,image/png'
-                                    }
-                                  />
-                                </label>
-                                <p className="pl-1">or drag and drop</p>
-                              </div>
-                              <p className="text-xs text-gray-500">
-                                {reportType === 'image'
-                                  ? 'PNG, JPG, DICOM up to 10MB'
-                                  : 'PDF, PNG, JPG up to 10MB'}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {error && (
-                      <div className="mb-4 rounded-md bg-red-50 p-4">
-                        <div className="flex">
-                          <div className="flex-shrink-0">
-                            <XMarkIcon className="h-5 w-5 text-red-400" aria-hidden="true" />
+                            </label>
+                            <p className="pl-1">or drag and drop</p>
                           </div>
-                          <div className="ml-3">
-                            <h3 className="text-sm font-medium text-red-800">Error</h3>
-                            <div className="mt-2 text-sm text-red-700">
-                              <p>{error}</p>
-                            </div>
-                          </div>
+                          <p className="mt-2 text-xs text-muted">
+                            {reportType === "image"
+                              ? "PNG, JPG, DICOM up to 10MB"
+                              : "PDF, PNG, JPG up to 10MB"}
+                          </p>
                         </div>
-                      </div>
-                    )}
-
-                    <div className="mt-6 flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={resetForm}
-                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={isUploading}
-                        className="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-75"
-                      >
-                        {isUploading ? (
-                          <span className="flex items-center">
-                            <ArrowPathIcon className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" />
-                            Analyzing...
-                          </span>
-                        ) : (
-                          'Upload and Analyze'
-                        )}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </form>
-            ) : (
-              <div className="analysis-result">
-                <div className="rounded-md bg-green-50 p-4 mb-6">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <CheckCircleIcon className="h-5 w-5 text-green-400" aria-hidden="true" />
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-green-800">Analysis Completed</h3>
-                      <div className="mt-2 text-sm text-green-700">
-                        <p>Your medical report has been analyzed successfully.</p>
-                      </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg mb-6">
-                  <div className="px-4 py-5 sm:px-6">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Analysis Results
-                    </h3>
-                    <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                      {reportType === 'image' 
-                        ? `AI analysis for ${IMAGE_MODALITIES.find(m => m.value === selectedModality)?.label || 'Medical Image'}`
-                        : `AI analysis for ${LAB_TEST_TYPES.find(t => t.value === selectedTestType)?.label || 'Lab Test'}`
-                      }
-                    </p>
+                  {error && (
+                    <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-destructive-100 p-3.5 text-sm text-destructive-700">
+                      <ExclamationTriangleIcon className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                      <p>{error}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button type="button" onClick={resetForm} className="btn btn-secondary">
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isUploading}
+                      className="btn btn-primary disabled:opacity-75"
+                    >
+                      {isUploading ? (
+                        <span className="flex items-center">
+                          <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                          Analyzing…
+                        </span>
+                      ) : (
+                        "Upload and analyze"
+                      )}
+                    </button>
                   </div>
-                  <div className="border-t border-gray-200">
-                    {reportType === 'image' && analysisResult && (
-                      <dl>
-                        <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Findings</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {analysisResult.findings}
-                          </dd>
-                        </div>
-                        <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Impression</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {analysisResult.impression}
-                          </dd>
-                        </div>
-                        <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Recommendations</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {analysisResult.recommendations}
-                          </dd>
-                        </div>
-                        <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Confidence</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {(analysisResult.probability * 100).toFixed(1)}%
-                          </dd>
-                        </div>
-                      </dl>
-                    )}
-
-                    {reportType === 'lab' && analysisResult && (
-                      <dl>
-                        {analysisResult.abnormalValues && analysisResult.abnormalValues.length > 0 ? (
-                          <div className="bg-white px-4 py-5 sm:px-6">
-                            <dt className="text-sm font-medium text-gray-500 mb-2">Abnormal Values</dt>
-                            <dd className="mt-1 text-sm text-gray-900">
-                              <div className="border rounded-md overflow-hidden">
-                                <table className="min-w-full divide-y divide-gray-300">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                        Parameter
-                                      </th>
-                                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                        Value
-                                      </th>
-                                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                        Reference Range
-                                      </th>
-                                      <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                                        Status
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="divide-y divide-gray-200 bg-white">
-                                    {analysisResult.abnormalValues.map((item, index) => (
-                                      <tr key={index}>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                          {item.parameter}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                          {item.value}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
-                                          {item.referenceRange}
-                                        </td>
-                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                          <span 
-                                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                                              item.status === 'High' ? 'bg-red-100 text-red-800' : 
-                                              item.status === 'Low' ? 'bg-yellow-100 text-yellow-800' :
-                                              'bg-green-100 text-green-800'
-                                            }`}
-                                          >
-                                            {item.status}
-                                          </span>
-                                        </td>
-                                      </tr>
-                                    ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </dd>
-                          </div>
-                        ) : (
-                          <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                            <dt className="text-sm font-medium text-gray-500">Results</dt>
-                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                              All values are within normal ranges.
-                            </dd>
-                          </div>
-                        )}
-
-                        <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Interpretation</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {analysisResult.interpretation}
-                          </dd>
-                        </div>
-                        <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                          <dt className="text-sm font-medium text-gray-500">Recommendations</dt>
-                          <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                            {analysisResult.recommendations}
-                          </dd>
-                        </div>
-                      </dl>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Upload Another Report
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => router.push('/dashboard/patient/records')}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    View All Reports
-                  </button>
+                </>
+              )}
+            </form>
+          </div>
+        ) : (
+          analysisResult && (
+            <div className="space-y-6">
+              {/* Success banner */}
+              <div className="flex items-start gap-3 rounded-xl border border-secondary-200 bg-secondary-50 p-4">
+                <CheckCircleIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-secondary-600" aria-hidden="true" />
+                <div>
+                  <p className="text-sm font-semibold text-secondary-800">Analysis complete</p>
+                  <p className="mt-0.5 text-sm text-secondary-700">
+                    {reportLabel} read in ~2s. Review the plain-language summary below.
+                  </p>
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* Plain-language summary */}
+              <section className="card rounded-2xl p-6">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                    <SparklesIcon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-ink">In plain language</h2>
+                </div>
+                <p className="mt-4 text-base leading-relaxed text-ink">
+                  {analysisResult.plainLanguage}
+                </p>
+                <p className="mt-4 flex items-start gap-2 text-xs text-muted">
+                  <ShieldCheckIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-secondary-600" aria-hidden="true" />
+                  Written for everyday understanding. Your clinician still reviews the full finding.
+                </p>
+              </section>
+
+              {/* Technical reading */}
+              <section className="card rounded-2xl p-6">
+                <h2 className="text-lg font-semibold text-ink">Clinical reading</h2>
+                <p className="mt-1 text-xs text-muted">{reportLabel}</p>
+                {reportType === "image" ? (
+                  <dl className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl bg-surface p-4">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Findings</dt>
+                      <dd className="mt-1.5 text-sm text-ink">{analysisResult.findings}</dd>
+                    </div>
+                    <div className="rounded-xl bg-surface p-4">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Impression</dt>
+                      <dd className="mt-1.5 text-sm text-ink">{analysisResult.impression}</dd>
+                    </div>
+                    <div className="rounded-xl bg-surface p-4">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">Recommendations</dt>
+                      <dd className="mt-1.5 text-sm text-ink">{analysisResult.recommendations}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <div className="mt-5 space-y-3">
+                    {analysisResult.abnormalValues.length > 0 ? (
+                      <div className="overflow-x-auto rounded-xl border border-border">
+                        <table className="min-w-full divide-y divide-border">
+                          <thead className="bg-surface">
+                            <tr>
+                              {["Parameter", "Value", "Reference range", "Status"].map((h) => (
+                                <th
+                                  key={h}
+                                  className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                                >
+                                  {h}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {analysisResult.abnormalValues.map((item, index) => (
+                              <tr key={index}>
+                                <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-ink">{item.parameter}</td>
+                                <td className="whitespace-nowrap px-4 py-3 text-sm text-ink">{item.value}</td>
+                                <td className="whitespace-nowrap px-4 py-3 text-sm text-muted">{item.referenceRange}</td>
+                                <td className="whitespace-nowrap px-4 py-3">
+                                  <span
+                                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                      item.status === "High"
+                                        ? "bg-destructive-100 text-destructive-700"
+                                        : item.status === "Low"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-secondary-100 text-secondary-800"
+                                    }`}
+                                  >
+                                    {item.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl bg-surface p-4 text-sm text-ink">
+                        All values are within their normal ranges.
+                      </div>
+                    )}
+                    <div className="rounded-xl bg-surface p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Interpretation</p>
+                      <p className="mt-1.5 text-sm text-ink">{analysisResult.interpretation}</p>
+                    </div>
+                    <div className="rounded-xl bg-surface p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Recommendations</p>
+                      <p className="mt-1.5 text-sm text-ink">{analysisResult.recommendations}</p>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Explainability panel */}
+              <section className="card rounded-2xl p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-ink">
+                    <ShieldCheckIcon className="h-5 w-5 text-secondary-600" aria-hidden="true" />
+                    How Medisynix reached this reading
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        analysisResult.flagged
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-secondary-100 text-secondary-800"
+                      }`}
+                    >
+                      {analysisResult.flagged ? "Flagged for review" : "Routine"}
+                    </span>
+                    <span className="glass px-2.5 py-1 text-xs font-semibold text-secondary-800">
+                      {analysisResult.confidence}% confidence
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <div className="flex justify-between text-xs text-muted">
+                    <span>Model confidence</span>
+                    <span className="font-semibold text-ink">{analysisResult.confidence}%</span>
+                  </div>
+                  <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted">
+                    <div
+                      className={`h-full rounded-full bg-gradient-to-r ${
+                        analysisResult.confidence >= 90
+                          ? "from-brand-600 to-secondary-500"
+                          : "from-secondary-500 to-teal-500"
+                      }`}
+                      style={{ width: `${analysisResult.confidence}%` }}
+                    />
+                  </div>
+                </div>
+
+                <h3 className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">
+                  Reasoning trace
+                </h3>
+                <ul className="mt-3 space-y-2.5">
+                  {analysisResult.reasoning.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2.5 rounded-lg bg-surface p-3 text-sm text-ink">
+                      <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-600/10 text-[10px] font-bold text-brand-700">
+                        {i + 1}
+                      </span>
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="mt-4 rounded-xl border border-border p-3.5 text-xs leading-relaxed text-muted">
+                  This summary is informational and generated for demonstration. It is not a
+                  diagnosis and does not replace a radiologist&apos;s or clinician&apos;s formal
+                  report. {analysisResult.flagged ? "Values outside the normal band should be discussed with your doctor." : ""}
+                </p>
+              </section>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+                <button type="button" onClick={resetForm} className="btn btn-secondary">
+                  Upload another report
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard/patient/records")}
+                  className="btn btn-primary"
+                >
+                  <span className="flex items-center">
+                    View all reports
+                    <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+                  </span>
+                </button>
+              </div>
+            </div>
+          )
+        )}
       </div>
     </DashboardLayout>
   );
-} 
+}
