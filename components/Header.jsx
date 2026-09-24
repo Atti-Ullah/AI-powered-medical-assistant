@@ -228,8 +228,7 @@ export default function Header() {
   const auth = useAuth() || { user: null, logout: () => {} };
   const { user, logout } = auth;
 
-<<<<<<< HEAD
-  // Define different navigation options based on user type
+// Define different navigation options based on user type
   const getNavigation = () => {
     const defaultNav = [
       { name: "Home", href: "/" },
@@ -260,16 +259,6 @@ export default function Header() {
       window.location.href = `/dashboard/${user.type}`;
     }
   };
-=======
-  const navigation = [
-    { name: "Home", href: "/" },
-    { name: "Features", href: "/#features" },
-    { name: "Testimonials", href: "/#testimonials" },
-    { name: "Contact", href: "/#contact" },
-    { name: "Documents", href: "/#documents" },
-    ...(user ? [{ name: "Dashboard", href: `/dashboard/${user.type}` }] : []),
-  ];
->>>>>>> d4dec0f067516f397bc023ade1c3a6e98d1ba8f9
 
   return (
     <header className="bg-white shadow">
