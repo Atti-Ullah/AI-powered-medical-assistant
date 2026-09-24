@@ -5,8 +5,15 @@ import {
   getUserAppointments,
   createAppointment as createStaticAppointment,
 } from '../../../lib/static-data';
+import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
+  const authUser = getAuthUser(req);
+  if (!authUser) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  req.authUser = authUser;
+
   // Handle different HTTP methods
   switch (req.method) {
     case 'GET':
@@ -26,6 +33,10 @@ async function getAppointments(req, res) {
 
   if (!userId) {
     return res.status(400).json({ success: false, message: 'User ID is required' });
+  }
+
+  if (!canAccessUser(req.authUser, userId)) {
+    return res.status(403).json({ success: false, message: 'Not allowed to view these appointments' });
   }
 
   try {
@@ -73,10 +84,14 @@ async function getAppointments(req, res) {
 
 // Create a new appointment
 async function createNewAppointment(req, res) {
-  const appointmentData = req.body;
+  const appointmentData = req.body || {};
 
   if (!appointmentData.patientId) {
     return res.status(400).json({ success: false, message: 'Patient ID is required' });
+  }
+
+  if (!canAccessUser(req.authUser, appointmentData.patientId)) {
+    return res.status(403).json({ success: false, message: 'Not allowed to book for another patient' });
   }
 
   try {
@@ -123,11 +138,24 @@ async function updateExistingAppointment(req, res) {
   try {
     await dbConnect();
     
-    const { appointmentId, ...updatedData } = req.body;
-    
+    const { appointmentId, date, time, status, reason, notes } = req.body || {};
+
     if (!appointmentId) {
       return res.status(400).json({ success: false, message: 'Appointment ID is required' });
     }
+
+    // Only the owning patient (or an admin) may change an appointment, and only these fields
+    const existing = await Appointment.findById(appointmentId).lean();
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    if (!canAccessUser(req.authUser, existing.patientId)) {
+      return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
+    }
+
+    const updatedData = Object.fromEntries(
+      Object.entries({ date, time, status, reason, notes }).filter(([, v]) => typeof v === 'string')
+    );
     
     // Add updated timestamp
     updatedData.updatedAt = new Date();
@@ -152,7 +180,7 @@ async function updateExistingAppointment(req, res) {
     console.error('Error updating appointment:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to update appointment'
+      message: 'Failed to update appointment'
     });
   }
 } 

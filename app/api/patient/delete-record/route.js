@@ -1,35 +1,20 @@
 import { NextResponse } from 'next/server';
-import '../../../../lib/slowbuffer-patch';
-import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { connectToDatabase } from '../../../../lib/mongodb';
+import { getAuthUser } from '../../../../lib/jwt';
 
 export async function DELETE(request) {
   try {
-    // Extract the authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify the login token; records always belong to the authenticated user
+    const authUser = getAuthUser(request);
+    if (!authUser) {
       return NextResponse.json(
-        { error: 'Unauthorized: No token provided' },
+        { error: 'Unauthorized: missing or invalid token' },
         { status: 401 }
       );
     }
 
-    // Extract and verify the token
-    const token = authHeader.split(' ')[1];
-    const jwtSecret = process.env.JWT_SECRET || 'development_secret_key';
-    
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    const userId = decoded.userId;
+    const userId = authUser.id;
     
     // Get the record ID from the query params
     const { searchParams } = new URL(request.url);

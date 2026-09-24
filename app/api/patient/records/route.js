@@ -31,7 +31,7 @@ export async function GET(request) {
     const requestedUserId = userId || authenticatedUserId;
     
     // Only allow access to own records unless admin
-    if (authenticatedUserId !== requestedUserId && !verified.isAdmin) {
+    if (authenticatedUserId !== requestedUserId && verified.type !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 403 }

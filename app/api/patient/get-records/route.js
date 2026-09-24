@@ -1,36 +1,21 @@
 import { NextResponse } from 'next/server';
-import '../../../../lib/slowbuffer-patch';
-import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import { connectToDatabase } from '../../../../lib/mongodb';
+import { getAuthUser } from '../../../../lib/jwt';
 
 // GET endpoint to fetch a user's medical records
 export async function GET(request) {
   try {
-    // Extract the authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify the login token; records always belong to the authenticated user
+    const authUser = getAuthUser(request);
+    if (!authUser) {
       return NextResponse.json(
-        { error: 'Unauthorized: No token provided' },
+        { error: 'Unauthorized: missing or invalid token' },
         { status: 401 }
       );
     }
 
-    // Extract and verify the token
-    const token = authHeader.split(' ')[1];
-    const jwtSecret = process.env.JWT_SECRET || 'development_secret_key';
-    
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    const userId = decoded.userId;
+    const userId = authUser.id;
     
     // Connect to the database
     const { db } = await connectToDatabase();
@@ -39,8 +24,8 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const searchTerm = searchParams.get('search') || '';
     const recordType = searchParams.get('type') || '';
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10', 10) || 10));
     const skip = (page - 1) * limit;
     
     // Build the query
@@ -48,10 +33,12 @@ export async function GET(request) {
     
     // Add search term if provided
     if (searchTerm) {
+      // Escape regex metacharacters so user input is matched literally
+      const safeTerm = searchTerm.slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
-        { title: { $regex: searchTerm, $options: 'i' } },
-        { doctor: { $regex: searchTerm, $options: 'i' } },
-        { findings: { $regex: searchTerm, $options: 'i' } }
+        { title: { $regex: safeTerm, $options: 'i' } },
+        { doctor: { $regex: safeTerm, $options: 'i' } },
+        { findings: { $regex: safeTerm, $options: 'i' } }
       ];
     }
     

@@ -11,7 +11,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { email, password, userType } = req.body;
+  const { email, password, userType } = req.body || {};
+
+  // Reject non-string values so request bodies cannot inject MongoDB query operators
+  if (typeof email !== 'string' || typeof password !== 'string' || typeof userType !== 'string') {
+    return res.status(400).json({ success: false, message: 'Email, password and user type are required' });
+  }
 
   try {
     await dbConnect();

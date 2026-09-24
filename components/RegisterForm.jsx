@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function RegisterForm() {
@@ -80,43 +80,6 @@ export default function RegisterForm() {
 
     return errors;
   };
-
-  const [os, setOS] = useState("");
-  const [location, setLocation] = useState({});
-  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
-
-  useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.ethereum !== "undefined"
-    ) {
-      setIsMetaMaskInstalled(true);
-    }
-
-    const userAgent = window.navigator.userAgent;
-    if (userAgent.indexOf("Win") !== -1) setOS("Windows");
-    else if (userAgent.indexOf("Mac") !== -1) setOS("macOS");
-    else if (userAgent.indexOf("Linux") !== -1) setOS("Linux");
-    else if (/Android/.test(userAgent)) setOS("Android");
-    else if (/iPhone|iPad|iPod/.test(userAgent)) setOS("iOS");
-    else setOS("Unknown");
-
-    const getLocationInfo = async () => {
-      await fetch("https://ipinfo.io/json")
-        .then((response) => response.json())
-        .then((data) => {
-          setLocation({
-            ip: data.ip,
-            city: data.city,
-            region: data.region,
-            country: data.country,
-          });
-        })
-        .catch((err) => { });
-    };
-
-    getLocationInfo();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

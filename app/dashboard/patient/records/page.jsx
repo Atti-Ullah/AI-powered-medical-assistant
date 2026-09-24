@@ -28,7 +28,9 @@ export default function MedicalRecordsPage() {
       
       try {
         const userId = user._id || user.id;
-        const response = await fetch(`/api/patient/records?userId=${userId}`);
+        const response = await fetch(`/api/patient/records?userId=${userId}`, {
+          headers: { Authorization: `Bearer ${user.token}` },
+        });
         
         if (!response.ok) {
           throw new Error('Failed to fetch medical records');

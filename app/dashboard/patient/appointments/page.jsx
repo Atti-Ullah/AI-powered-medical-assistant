@@ -52,7 +52,8 @@ export default function AppointmentsPage() {
 
           // Fetch appointments from the server
           const response = await fetch(
-            `/api/patient/appointments?userId=${userId}`
+            `/api/patient/appointments?userId=${userId}`,
+            { headers: { Authorization: `Bearer ${user?.token}` } }
           );
 
           if (response.ok) {
@@ -149,6 +150,7 @@ export default function AppointmentsPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
         },
         body: JSON.stringify(appointmentData),
       });
@@ -205,6 +207,7 @@ export default function AppointmentsPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
         },
         body: JSON.stringify({
           appointmentId: selectedAppointment.id,
@@ -248,6 +251,7 @@ export default function AppointmentsPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${user?.token}`,
         },
         body: JSON.stringify({
           appointmentId: selectedAppointment.id,

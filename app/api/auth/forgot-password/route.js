@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { connectToDatabase } from '../../../../lib/mongodb';
-import { ObjectId } from 'mongodb';
 
 export async function POST(request) {
   try {
@@ -9,21 +8,19 @@ export async function POST(request) {
     const { email, userType } = await request.json();
     
     // Validate inputs
-    if (!email) {
+    if (!email || typeof email !== 'string') {
       return NextResponse.json(
         { success: false, message: 'Email is required' },
         { status: 400 }
       );
     }
 
-    if (!userType) {
+    if (!userType || typeof userType !== 'string') {
       return NextResponse.json(
         { success: false, message: 'User type is required' },
         { status: 400 }
       );
     }
-    
-    console.log(`Password reset requested for: ${email} (${userType})`);
     
     // Connect to MongoDB
     const { db } = await connectToDatabase();
@@ -36,7 +33,6 @@ export async function POST(request) {
     
     // If user not found, still return success to prevent email enumeration
     if (!user) {
-      console.log(`User not found for reset password: ${email} (${userType})`);
       return NextResponse.json({ 
         success: true, 
         message: 'If your email is registered, you will receive a password reset link' 
@@ -62,26 +58,24 @@ export async function POST(request) {
     );
     
     // Create reset URL
-    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${user.email}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
     
-    // In a production environment, we would send an email here
-    console.log('Password reset link:', resetUrl);
-    
-    // For development purposes, log the reset token
-    console.log('Reset token (for development):', resetToken);
+    // In a production environment, we would send an email here.
+    // The link is only logged during local development and never in production.
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Password reset link (development only):', resetUrl);
+    }
     
     // Return success response
     return NextResponse.json({
       success: true,
-      message: 'If your email is registered, you will receive a password reset link',
-      // Only include the resetUrl in development environment for testing
-      ...(process.env.NODE_ENV !== 'production' && { resetUrl })
+      message: 'If your email is registered, you will receive a password reset link'
     });
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Forgot password error:', error.message);
     return NextResponse.json({
       success: false,
-      message: error.message || 'An error occurred. Please try again later.'
+      message: 'An error occurred. Please try again later.'
     }, { status: 500 });
   }
 } 

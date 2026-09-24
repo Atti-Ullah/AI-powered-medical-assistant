@@ -11,7 +11,21 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { firstName, lastName, email, password, userType } = req.body;
+  const { firstName, lastName, email, password, userType } = req.body || {};
+
+  // Server-side validation mirrors the registration form so the API cannot be used to bypass it
+  if ([firstName, lastName, email, password].some((v) => typeof v !== 'string' || !v.trim())) {
+    return res.status(400).json({ success: false, message: 'All fields are required' });
+  }
+  if (!/^\S+@\S+\.\S+$/.test(email)) {
+    return res.status(400).json({ success: false, message: 'Email is invalid' });
+  }
+  if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[\W_]/.test(password)) {
+    return res.status(400).json({
+      success: false,
+      message: 'Password must be at least 8 characters and include upper and lower case letters, a number and a special character'
+    });
+  }
 
   // Only allow patient registration through this endpoint
   if (userType !== 'patient') {

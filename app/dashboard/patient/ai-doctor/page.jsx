@@ -32,12 +32,10 @@ export default function AIDoctorSelectionPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // Assuming you store auth token in localStorage
+          'Authorization': `Bearer ${user?.token}`
         },
-        body: JSON.stringify({
-          doctorType,
-          userId: user?.id || '',
-        }),
+        // The server takes the user ID from the login token
+        body: JSON.stringify({ doctorType }),
       });
 
       const data = await response.json();

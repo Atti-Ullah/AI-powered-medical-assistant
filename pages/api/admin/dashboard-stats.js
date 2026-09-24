@@ -2,11 +2,21 @@ import dbConnect from '../../../lib/db';
 import User from '../../../models/User';
 import Appointment from '../../../models/Appointment';
 import { getDashboardStats, getRecentUsers } from '../../../lib/static-data';
+import { getAuthUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
   // Only allow GET method
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
+  }
+
+  // Platform statistics and the recent-user list are for administrators only
+  const authUser = getAuthUser(req);
+  if (!authUser) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  if (authUser.type !== 'admin') {
+    return res.status(403).json({ success: false, message: 'Administrator access required' });
   }
 
   try {
@@ -47,14 +57,8 @@ export default async function handler(req, res) {
     // Fallback: serve aggregate stats from the static demo dataset so the
     // admin dashboard remains functional without a live database connection.
     const stats = getDashboardStats();
-    const recentUsers = getRecentUsers(5).map((user) => ({
-      id: user.id,
-      name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      email: user.email,
-      type: user.userType,
-      status: 'active',
-      date: (user.createdAt || new Date().toISOString()).split('T')[0],
-    }));
+    // getRecentUsers() already returns { id, name, email, type, status, date }
+    const recentUsers = getRecentUsers(5);
 
     return res.status(200).json({
       success: true,
@@ -62,7 +66,7 @@ export default async function handler(req, res) {
       totalUsers: stats.totalUsers,
       activeDoctors: stats.activeDoctors,
       activePatients: stats.activePatients,
-      consultations: stats.totalAppointments,
+      consultations: stats.consultations ?? 0,
       recentUsers,
     });
   }

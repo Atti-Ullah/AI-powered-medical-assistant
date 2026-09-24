@@ -72,7 +72,8 @@ export default function PatientProfilePage() {
       const fetchHealthMetrics = async () => {
         try {
           const response = await fetch(
-            `/api/patient/get-health-metrics?userId=${userData.id}`
+            `/api/patient/get-health-metrics?userId=${userData.id}`,
+            { headers: { Authorization: `Bearer ${userData.token}` } }
           );
 
           if (response.ok) {
@@ -120,15 +121,6 @@ export default function PatientProfilePage() {
         console.error("Authentication token is missing");
         throw new Error("Authentication token not available");
       }
-
-      console.log("Submitting profile update with token:", token);
-      console.log("Profile data being sent:", {
-        name: formData.name,
-        phone: formData.phone,
-        dateOfBirth: formData.dateOfBirth,
-        gender: formData.gender,
-        bloodType: formData.bloodType,
-      });
 
       // First, update profile in MongoDB
       const response = await fetch("/api/patient/update-profile", {

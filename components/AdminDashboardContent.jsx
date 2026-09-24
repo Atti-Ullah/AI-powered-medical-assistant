@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "../contexts/AuthContext";
 import {
   UserGroupIcon,
   UserIcon,
@@ -13,6 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function AdminDashboardContent() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -31,7 +33,9 @@ export default function AdminDashboardContent() {
         setIsLoading(true);
 
         // Fetch users from the file system
-        const response = await fetch("/api/admin/dashboard-stats");
+        const response = await fetch("/api/admin/dashboard-stats", {
+          headers: { Authorization: `Bearer ${user?.token}` },
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch dashboard data");
         }
@@ -86,12 +90,13 @@ export default function AdminDashboardContent() {
       }
     };
 
+    if (!user?.token) return;
     fetchDashboardData();
 
     // Refresh data every 60 seconds
     const interval = setInterval(fetchDashboardData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.token]);
 
   // System alerts (static for now)
   const systemAlerts = [

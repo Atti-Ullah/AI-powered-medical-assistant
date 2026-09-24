@@ -9,7 +9,10 @@ export async function POST(request) {
     const { token, email, password } = await request.json();
     
     // Validate required fields
-    if (!token || !email || !password) {
+    if (
+      !token || !email || !password ||
+      typeof token !== 'string' || typeof email !== 'string' || typeof password !== 'string'
+    ) {
       return NextResponse.json({ 
         success: false, 
         message: 'Token, email, and password are required' 
@@ -29,8 +32,6 @@ export async function POST(request) {
       .createHash('sha256')
       .update(token)
       .digest('hex');
-    
-    console.log(`Processing password reset for email: ${email}`);
     
     // Connect to MongoDB
     const { db } = await connectToDatabase();
@@ -68,18 +69,16 @@ export async function POST(request) {
       }
     );
     
-    console.log('Password reset successful for user:', email);
-    
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Password has been reset successfully. Please log in with your new password.'
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Reset password error:', error.message);
     return NextResponse.json({
       success: false,
-      message: error.message || 'An error occurred. Please try again later.'
+      message: 'An error occurred. Please try again later.'
     }, { status: 500 });
   }
 } 
