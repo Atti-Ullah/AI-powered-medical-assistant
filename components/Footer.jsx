@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "./Logo";
 
 const columns = [
   {
@@ -85,10 +86,8 @@ export default function Footer() {
         <div className="grid gap-12 lg:grid-cols-12">
           {/* Brand */}
           <div className="lg:col-span-3">
-            <Link href="/" className="flex items-center">
-              <span className="bg-gradient-to-r from-blue-400 to-teal-300 bg-clip-text text-2xl font-bold text-transparent">
-                Medisynix
-              </span>
+            <Link href="/" aria-label="Medisynix home" className="inline-flex transition-opacity hover:opacity-90">
+              <Logo className="h-9 sm:h-11" variant="light" />
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-6 text-slate-400">
               An AI-powered healthcare assistant bringing Aga Khan University

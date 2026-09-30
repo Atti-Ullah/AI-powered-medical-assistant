@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Logo from "../../components/Logo";
 import RegisterForm from "../../components/RegisterForm";
 
 export const metadata = {
@@ -12,7 +13,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <Link href="/" className="flex justify-center">
-            <h1 className="text-3xl font-bold text-primary-600">Medisynix</h1>
+            <Logo className="h-12 sm:h-14" priority />
           </Link>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             Create a new account

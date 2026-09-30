@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { ArrowPathIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLayout from "./DashboardLayout";
+import AdminPageHeader from "./AdminPageHeader";
 import { adminRequest } from "../lib/admin-client";
 
 // Shared shell for the admin pages that render from the live system status
 // (analytics, alerts, security, settings). `children` receives the status.
-export default function AdminSystemPage({ title, description, children }) {
+export default function AdminSystemPage({ title, description, sections = null, children }) {
   const { user } = useAuth();
   const token = user?.token;
   const [status, setStatus] = useState(null);
@@ -36,28 +38,41 @@ export default function AdminSystemPage({ title, description, children }) {
 
   return (
     <DashboardLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-          <p className="mt-1 text-sm text-gray-600">{description}</p>
-        </div>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-60"
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
+      <AdminPageHeader
+        title={title}
+        description={description}
+        actions={
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-60"
+          >
+            <ArrowPathIcon className={`h-4 w-4 text-slate-400 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+            {loading ? "Refreshing" : "Refresh"}
+          </button>
+        }
+      />
 
       {error && (
-        <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
 
-      {status ? children(status) : !error && <p className="text-gray-500">Loading...</p>}
+      {sections}
+
+      {status ? (
+        children(status)
+      ) : (
+        !error && (
+          <div className="space-y-4" aria-label="Loading">
+            <div className="h-28 animate-pulse rounded-2xl bg-slate-100" />
+            <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />
+          </div>
+        )
+      )}
     </DashboardLayout>
   );
 }

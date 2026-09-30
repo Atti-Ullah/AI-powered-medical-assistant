@@ -5,26 +5,68 @@ import Link from "next/link";
 import { useAuth } from "../contexts/AuthContext";
 import { adminRequest, buildAlerts, formatUptime } from "../lib/admin-client";
 import {
+  UsersIcon,
   UserGroupIcon,
-  UserIcon,
-  DocumentTextIcon,
-  ChartBarIcon,
-  CogIcon,
+  HeartIcon,
+  CalendarDaysIcon,
+  Cog6ToothIcon,
+  ChartBarSquareIcon,
   ShieldCheckIcon,
-  ServerIcon,
+  ServerStackIcon,
+  UserPlusIcon,
+  ArrowRightIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  XCircleIcon,
+  DocumentChartBarIcon,
+  ClipboardDocumentListIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+
+const STAT_TILES = [
+  { key: "totalUsers", name: "Total Users", caption: "All registered accounts", icon: UsersIcon, tone: "bg-blue-50 text-blue-600 ring-blue-100" },
+  { key: "activeDoctors", name: "Doctors", caption: "Practitioners on the platform", icon: UserGroupIcon, tone: "bg-emerald-50 text-emerald-600 ring-emerald-100" },
+  { key: "activePatients", name: "Patients", caption: "Registered patients", icon: HeartIcon, tone: "bg-violet-50 text-violet-600 ring-violet-100" },
+  { key: "consultations", name: "Consultations", caption: "Booked, not cancelled", icon: CalendarDaysIcon, tone: "bg-amber-50 text-amber-600 ring-amber-100" },
+];
+
+const QUICK_ACTIONS = [
+  { name: "User Management", text: "Create, edit and remove accounts", href: "/dashboard/admin/users", icon: UsersIcon, tone: "bg-blue-50 text-blue-600" },
+  { name: "System Settings", text: "Review platform configuration", href: "/dashboard/admin/settings", icon: Cog6ToothIcon, tone: "bg-slate-100 text-slate-600" },
+  { name: "Analytics", text: "Usage and appointment insights", href: "/dashboard/admin/analytics", icon: ChartBarSquareIcon, tone: "bg-emerald-50 text-emerald-600" },
+  { name: "Security", text: "Authentication and access checks", href: "/dashboard/admin/security", icon: ShieldCheckIcon, tone: "bg-rose-50 text-rose-600" },
+];
+
+const TABS = [
+  { name: "Recent Users", value: "users" },
+  { name: "System Alerts", value: "alerts" },
+  { name: "Reports", value: "reports" },
+];
+
+const ROLE_BADGES = {
+  doctor: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  admin: "bg-rose-50 text-rose-700 ring-rose-600/20",
+  patient: "bg-violet-50 text-violet-700 ring-violet-600/20",
+};
+
+const ALERT_STYLES = {
+  error: { icon: XCircleIcon, tile: "bg-rose-50 text-rose-600" },
+  warning: { icon: ExclamationTriangleIcon, tile: "bg-amber-50 text-amber-600" },
+  info: { icon: InformationCircleIcon, tile: "bg-blue-50 text-blue-600" },
+};
+
+const REPORTS = [
+  { name: "User Activity Report", text: "Every registered account with role and join date, exported as CSV.", icon: ClipboardDocumentListIcon },
+  { name: "System Health Report", text: "Database mode, security checks and platform totals, exported as JSON.", icon: DocumentChartBarIcon },
+];
+
+const card = "rounded-2xl border border-slate-200 bg-white shadow-sm";
 
 export default function AdminDashboardContent() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    activeDoctors: 0,
-    activePatients: 0,
-    consultations: 0,
-    platformStats: [],
-  });
+  const [stats, setStats] = useState(null);
   const [recentUsers, setRecentUsers] = useState([]);
   const [systemStatus, setSystemStatus] = useState(null);
   const [showStatus, setShowStatus] = useState(false);
@@ -36,7 +78,6 @@ export default function AdminDashboardContent() {
       try {
         setIsLoading(true);
 
-        // Fetch users from the file system
         const response = await fetch("/api/admin/dashboard-stats", {
           headers: { Authorization: `Bearer ${user?.token}` },
         });
@@ -45,39 +86,7 @@ export default function AdminDashboardContent() {
         }
 
         const data = await response.json();
-
-        // Format platform stats for display
-        const platformStats = [
-          {
-            name: "Total Users",
-            value: data.totalUsers.toString(),
-            icon: UserGroupIcon,
-            color: "bg-blue-500",
-          },
-          {
-            name: "Active Doctors",
-            value: data.activeDoctors.toString(),
-            icon: UserIcon,
-            color: "bg-green-500",
-          },
-          {
-            name: "Active Patients",
-            value: data.activePatients.toString(),
-            icon: UserGroupIcon,
-            color: "bg-purple-500",
-          },
-          {
-            name: "Consultations",
-            value: data.consultations.toString(),
-            icon: DocumentTextIcon,
-            color: "bg-yellow-500",
-          },
-        ];
-
-        setStats({
-          ...data,
-          platformStats,
-        });
+        setStats(data);
         setRecentUsers(data.recentUsers || []);
         setLoadError("");
 
@@ -106,350 +115,187 @@ export default function AdminDashboardContent() {
 
   // System alerts come from the live health check
   const systemAlerts = buildAlerts(systemStatus);
-
-  const quickActions = [
-    {
-      name: "User Management",
-      href: "/dashboard/admin/users",
-      icon: UserGroupIcon,
-      color: "bg-blue-500",
-    },
-    {
-      name: "System Settings",
-      href: "/dashboard/admin/settings",
-      icon: CogIcon,
-      color: "bg-gray-500",
-    },
-    {
-      name: "Analytics Dashboard",
-      href: "/dashboard/admin/analytics",
-      icon: ChartBarIcon,
-      color: "bg-green-500",
-    },
-    {
-      name: "Security Management",
-      href: "/dashboard/admin/security",
-      icon: ShieldCheckIcon,
-      color: "bg-red-500",
-    },
-  ];
+  const firstName = user?.name ? user.name.split(" ")[0] : "Admin";
 
   return (
-    <div>
-      {/* Dashboard header */}
-      <div className="md:flex md:items-center md:justify-between mb-8">
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Manage and monitor the Medisynix platform
-          </p>
+    <div className="space-y-8">
+      {/* Page header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary-600">Administration</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Welcome back, {firstName}</h1>
+          <p className="mt-1 text-sm text-slate-500">Monitor accounts, activity and platform health in one place.</p>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+        <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
             onClick={() => setShowStatus(true)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
           >
-            <ServerIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500" />
+            <ServerStackIcon className="h-5 w-5 text-slate-400" aria-hidden="true" />
             System Status
           </button>
           <Link
             href="/dashboard/admin/users?new=1"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            className="inline-flex items-center gap-2 whitespace-nowrap rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
           >
-            <UserGroupIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
             Add New User
           </Link>
         </div>
       </div>
 
       {loadError && (
-        <div
-          role="alert"
-          className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-        >
+        <div role="alert" className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
           {loadError}
         </div>
       )}
 
-      {showStatus && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label="System status"
-        >
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-medium text-gray-900">System Status</h3>
-            {systemStatus ? (
-              <dl className="mt-4 divide-y divide-gray-100 text-sm">
-                {[
-                  ["Database", systemStatus.database.connected ? "Connected (MongoDB)" : "Unavailable - using local file store"],
-                  ["Environment", systemStatus.server.environment],
-                  ["Node.js", systemStatus.server.nodeVersion],
-                  ["Uptime", formatUptime(systemStatus.server.uptimeSeconds)],
-                  ["Users", systemStatus.totals.users],
-                  ["Appointments", systemStatus.totals.appointments],
-                  ["Checked", new Date(systemStatus.checkedAt).toLocaleString()],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex justify-between py-2">
-                    <dt className="text-gray-500">{label}</dt>
-                    <dd className="font-medium text-gray-900">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <p className="mt-4 text-sm text-gray-500">Status is not available yet.</p>
-            )}
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setShowStatus(false)}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Stats */}
-      <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading
-          ? // Loading skeletons for stats
-            Array(4)
-              .fill(0)
-              .map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-white pt-5 px-4 pb-5 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden"
-                >
-                  <div className="animate-pulse flex space-x-4">
-                    <div className="rounded-md bg-gray-300 h-12 w-12"></div>
-                    <div className="flex-1 space-y-2 py-1">
-                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                    </div>
-                  </div>
-                </div>
-              ))
-          : stats.platformStats?.map((stat) => (
-              <div
-                key={stat.name}
-                className="relative bg-white pt-5 px-4 pb-5 sm:pt-6 sm:px-6 shadow rounded-lg overflow-hidden"
-              >
-                <dt>
-                  <div className={`absolute rounded-md p-3 ${stat.color}`}>
-                    <stat.icon
-                      className="h-6 w-6 text-white"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <p className="ml-16 text-sm font-medium text-gray-500 truncate">
-                    {stat.name}
-                  </p>
-                </dt>
-                <dd className="ml-16 flex items-baseline">
-                  <p className="text-2xl font-semibold text-gray-900">
-                    {stat.value}
-                  </p>
-                </dd>
-              </div>
-            ))}
-      </div>
+      <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        {STAT_TILES.map((tile) => (
+          <div key={tile.key} className={`${card} p-6`}>
+            <div className="flex items-center justify-between">
+              <dt className="text-sm font-medium text-slate-500">{tile.name}</dt>
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ring-1 ring-inset ${tile.tone}`}>
+                <tile.icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+            </div>
+            <dd className="mt-4">
+              {isLoading && !stats ? (
+                <div className="h-9 w-16 animate-pulse rounded-md bg-slate-100" />
+              ) : (
+                <p className="text-3xl font-bold tracking-tight text-slate-900">{stats?.[tile.key] ?? 0}</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">{tile.caption}</p>
+            </dd>
+          </div>
+        ))}
+      </dl>
 
       {/* Quick actions */}
-      <div className="mt-8">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {quickActions.map((action) => (
+      <section aria-labelledby="quick-actions">
+        <h2 id="quick-actions" className="mb-4 text-base font-semibold text-slate-900">Quick actions</h2>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {QUICK_ACTIONS.map((action) => (
             <Link
               key={action.name}
               href={action.href}
-              className="relative rounded-lg p-6 flex flex-col items-center text-center bg-white shadow hover:bg-gray-50 transition-colors"
+              className={`${card} group flex items-start gap-4 p-5 transition hover:-translate-y-0.5 hover:border-primary-200 hover:shadow-md`}
             >
-              <div className={`p-3 rounded-md ${action.color} text-white mb-4`}>
-                <action.icon className="h-6 w-6" aria-hidden="true" />
-              </div>
-              <span className="text-base font-medium text-gray-900">
-                {action.name}
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${action.tone}`}>
+                <action.icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between text-sm font-semibold text-slate-900">
+                  {action.name}
+                  <ArrowRightIcon className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-primary-600" aria-hidden="true" />
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-slate-500">{action.text}</span>
               </span>
             </Link>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Tabs */}
-      <div className="mt-8">
-        <div className="sm:hidden">
-          <label htmlFor="tabs" className="sr-only">
-            Select a tab
-          </label>
-          <select
-            id="tabs"
-            name="tabs"
-            className="block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
-            value={activeTab}
-            onChange={(e) => setActiveTab(e.target.value)}
-          >
-            <option value="users">Recent Users</option>
-            <option value="alerts">System Alerts</option>
-            <option value="reports">System Reports</option>
-          </select>
-        </div>
-        <div className="hidden sm:block">
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-              {[
-                { name: "Recent Users", value: "users" },
-                { name: "System Alerts", value: "alerts" },
-                { name: "System Reports", value: "reports" },
-              ].map((tab) => (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`
-                    ${
-                      activeTab === tab.value
-                        ? "border-primary-500 text-primary-600"
-                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                    }
-                    whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                  `}
-                  aria-current={activeTab === tab.value ? "page" : undefined}
-                >
-                  {tab.name}
-                </button>
-              ))}
-            </nav>
+      {/* Activity panel */}
+      <section className={card}>
+        <div className="flex flex-col gap-4 border-b border-slate-200 px-6 pt-5 sm:flex-row sm:items-center sm:justify-between">
+          <div role="tablist" aria-label="Dashboard sections" className="-mb-px flex gap-6">
+            {TABS.map((tab) => (
+              <button
+                key={tab.value}
+                role="tab"
+                type="button"
+                aria-selected={activeTab === tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={`border-b-2 pb-3 text-sm font-medium transition ${
+                  activeTab === tab.value
+                    ? "border-primary-600 text-primary-700"
+                    : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                }`}
+              >
+                {tab.name}
+                {tab.value === "alerts" && systemAlerts.some((a) => a.severity !== "info") && (
+                  <span className="ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-rose-100 px-1.5 text-xs font-semibold text-rose-700">
+                    {systemAlerts.filter((a) => a.severity !== "info").length}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+          <div className="pb-3 text-sm">
+            {activeTab === "users" && (
+              <Link href="/dashboard/admin/users" className="font-medium text-primary-600 hover:text-primary-700">
+                View all users &rarr;
+              </Link>
+            )}
+            {activeTab === "alerts" && (
+              <Link href="/dashboard/admin/alerts" className="font-medium text-primary-600 hover:text-primary-700">
+                View all alerts &rarr;
+              </Link>
+            )}
+            {activeTab === "reports" && (
+              <Link href="/dashboard/admin/reports" className="font-medium text-primary-600 hover:text-primary-700">
+                Open reports &rarr;
+              </Link>
+            )}
           </div>
         </div>
-      </div>
 
-      {/* Tab content */}
-      <div className="mt-6">
-        {/* Recent Users Tab Content */}
+        {/* Recent users */}
         {activeTab === "users" && (
-          <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            <div className="flex justify-between items-center bg-white px-4 py-3 sm:px-6">
-              <h3 className="text-base font-medium text-gray-900">
-                Recent User Registrations
-              </h3>
-              <Link
-                href="/dashboard/admin/users"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500"
-              >
-                View all users
-              </Link>
-            </div>
-            {isLoading ? (
-              // Loading skeleton for user table
-              <div className="px-4 py-5 sm:p-6">
-                <div className="animate-pulse space-y-4">
-                  {Array(5)
-                    .fill(0)
-                    .map((_, index) => (
-                      <div key={index} className="flex space-x-4">
-                        <div className="flex-1 space-y-2 py-1">
-                          <div className="h-4 bg-gray-300 rounded"></div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
+          <div className="overflow-x-auto">
+            {isLoading && recentUsers.length === 0 ? (
+              <div className="space-y-4 p-6">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+                ))}
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-300">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
-                    >
-                      Name
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                    >
-                      Email
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                    >
-                      Type
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
-                    >
-                      Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="relative py-3.5 pl-3 pr-4 sm:pr-6"
-                    >
-                      <span className="sr-only">Actions</span>
-                    </th>
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead>
+                  <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th scope="col" className="px-6 py-3">User</th>
+                    <th scope="col" className="px-6 py-3">Role</th>
+                    <th scope="col" className="px-6 py-3">Status</th>
+                    <th scope="col" className="px-6 py-3">Joined</th>
+                    <th scope="col" className="px-6 py-3"><span className="sr-only">Actions</span></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200 bg-white">
+                <tbody className="divide-y divide-slate-100">
                   {recentUsers.length > 0 ? (
-                    recentUsers.map((user) => (
-                      <tr key={user.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                          {user.name}
+                    recentUsers.map((u) => (
+                      <tr key={u.id} className="transition hover:bg-slate-50/70">
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                              {u.name?.charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium text-slate-900">{u.name}</p>
+                              <p className="text-xs text-slate-500">{u.email}</p>
+                            </div>
+                          </div>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {user.email}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                              user.type === "doctor"
-                                ? "bg-blue-100 text-blue-800"
-                                : user.type === "admin"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-purple-100 text-purple-800"
-                            }`}
-                          >
-                            {user.type}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ring-1 ring-inset ${ROLE_BADGES[u.type] || ROLE_BADGES.patient}`}>
+                            {u.type}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <span
-                            className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                              user.status === "active"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {user.status}
+                        <td className="whitespace-nowrap px-6 py-4">
+                          <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+                            <span className={`h-2 w-2 rounded-full ${u.status === "active" ? "bg-emerald-500" : "bg-amber-500"}`} />
+                            <span className="capitalize">{u.status}</span>
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {user.date}
-                        </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <Link
-                            href={`/dashboard/admin/users/${user.id}`}
-                            className="text-primary-600 hover:text-primary-900 mr-4"
-                          >
+                        <td className="whitespace-nowrap px-6 py-4 text-sm text-slate-500">{u.date}</td>
+                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
+                          <Link href={`/dashboard/admin/users/${u.id}`} className="mr-4 font-medium text-primary-600 hover:text-primary-700">
                             View
                           </Link>
-                          <Link
-                            href={`/dashboard/admin/users/${user.id}`}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
+                          <Link href={`/dashboard/admin/users/${u.id}`} className="font-medium text-slate-500 hover:text-slate-800">
                             Edit
                           </Link>
                         </td>
@@ -457,10 +303,7 @@ export default function AdminDashboardContent() {
                     ))
                   ) : (
                     <tr>
-                      <td
-                        colSpan="6"
-                        className="px-6 py-4 text-center text-sm text-gray-500"
-                      >
+                      <td colSpan="5" className="px-6 py-12 text-center text-sm text-slate-500">
                         No recent users found
                       </td>
                     </tr>
@@ -471,181 +314,116 @@ export default function AdminDashboardContent() {
           </div>
         )}
 
-        {/* System Alerts Tab Content */}
+        {/* System alerts */}
         {activeTab === "alerts" && (
-          <div className="bg-white shadow sm:rounded-lg">
-            <div className="flex justify-between items-center px-4 py-3 sm:px-6">
-              <h3 className="text-base font-medium text-gray-900">
-                Active System Alerts
-              </h3>
-              <Link
-                href="/dashboard/admin/alerts"
-                className="text-sm font-medium text-primary-600 hover:text-primary-500"
-              >
-                View all alerts
-              </Link>
-            </div>
-            <ul className="divide-y divide-gray-200">
-              {systemAlerts.map((alert) => (
-                <li key={alert.id} className="px-4 py-4 sm:px-6">
-                  <div className="flex items-start">
-                    <div
-                      className={`mt-1 flex-shrink-0 ${
-                        alert.severity === "info"
-                          ? "text-blue-500"
-                          : alert.severity === "warning"
-                          ? "text-yellow-500"
-                          : "text-red-500"
-                      }`}
-                    >
-                      {alert.severity === "info" ? (
-                        <InformationCircleIcon className="h-5 w-5" />
-                      ) : alert.severity === "warning" ? (
-                        <ExclamationCircleIcon className="h-5 w-5" />
-                      ) : (
-                        <XCircleIcon className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-gray-900">
-                          {alert.title}
-                        </p>
-                        <p className="text-sm text-gray-500">{alert.date}</p>
+          <ul className="divide-y divide-slate-100">
+            {systemAlerts.length === 0 ? (
+              <li className="px-6 py-12 text-center text-sm text-slate-500">Checking system health...</li>
+            ) : (
+              systemAlerts.map((alert) => {
+                const style = ALERT_STYLES[alert.severity] || ALERT_STYLES.info;
+                return (
+                  <li key={alert.id} className="flex items-start gap-4 px-6 py-5">
+                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${style.tile}`}>
+                      <style.icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-4">
+                        <p className="text-sm font-semibold text-slate-900">{alert.title}</p>
+                        <p className="shrink-0 text-xs text-slate-400">{alert.date}</p>
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {alert.description}
-                      </p>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-500">{alert.description}</p>
                     </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
+                  </li>
+                );
+              })
+            )}
+          </ul>
         )}
 
-        {/* System Reports Tab Content */}
+        {/* Reports */}
         {activeTab === "reports" && (
-          <div className="bg-white shadow sm:rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base font-medium text-gray-900">
-                System Reports
-              </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Generate and view reports on system performance, user activity,
-                and more.
-              </p>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="border border-gray-300 rounded-md p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    User Activity Report
-                  </h4>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Analysis of user logins, registrations, and active sessions.
-                  </p>
-                  <Link
-                    href="/dashboard/admin/reports"
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Generate Report
-                  </Link>
-                </div>
-                <div className="border border-gray-300 rounded-md p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-2">
-                    System Health Report
-                  </h4>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Overview of system performance, errors, and bottlenecks.
-                  </p>
-                  <Link
-                    href="/dashboard/admin/reports"
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  >
-                    Generate Report
-                  </Link>
+          <div className="grid grid-cols-1 gap-5 p-6 md:grid-cols-2">
+            {REPORTS.map((report) => (
+              <div key={report.name} className="flex flex-col rounded-xl border border-slate-200 p-5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                  <report.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-slate-900">{report.name}</h3>
+                <p className="mt-1 flex-1 text-sm leading-relaxed text-slate-500">{report.text}</p>
+                <Link
+                  href="/dashboard/admin/reports"
+                  className="mt-4 inline-flex w-fit items-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-primary-700"
+                >
+                  Generate Report
+                  <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* System status dialog */}
+      {showStatus && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="System status"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                  <ServerStackIcon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">System Status</h3>
+                  <p className="text-xs text-slate-500">Latest health check</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowStatus(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              >
+                <span className="sr-only">Close</span>
+                <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+              </button>
+            </div>
+            {systemStatus ? (
+              <dl className="mt-5 divide-y divide-slate-100 text-sm">
+                {[
+                  ["Database", systemStatus.database.connected ? "Connected (MongoDB)" : "Unavailable - using local file store"],
+                  ["Environment", systemStatus.server.environment],
+                  ["Node.js", systemStatus.server.nodeVersion],
+                  ["Uptime", formatUptime(systemStatus.server.uptimeSeconds)],
+                  ["Users", systemStatus.totals.users],
+                  ["Appointments", systemStatus.totals.appointments],
+                  ["Checked", new Date(systemStatus.checkedAt).toLocaleString()],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4 py-2.5">
+                    <dt className="text-slate-500">{label}</dt>
+                    <dd className="text-right font-medium text-slate-900">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="mt-5 text-sm text-slate-500">Status is not available yet.</p>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowStatus(false)}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Close
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-// Icon components
-function ArrowTrendingUpIcon({ className }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className={className}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"
-      />
-    </svg>
-  );
-}
-
-function InformationCircleIcon({ className }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className={className}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-      />
-    </svg>
-  );
-}
-
-function ExclamationCircleIcon({ className }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className={className}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-      />
-    </svg>
-  );
-}
-
-function XCircleIcon({ className }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth={1.5}
-      stroke="currentColor"
-      className={className}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
   );
 }

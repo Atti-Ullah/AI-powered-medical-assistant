@@ -3,9 +3,20 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeftIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../../components/DashboardLayout";
+import AdminPageHeader from "../../../../../components/AdminPageHeader";
 import { adminRequest } from "../../../../../lib/admin-client";
+
+const inputClass =
+  "block w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 disabled:bg-slate-50 disabled:text-slate-500";
+
+const ROLE_BADGES = {
+  doctor: "bg-blue-50 text-blue-700 ring-blue-600/20",
+  admin: "bg-rose-50 text-rose-700 ring-rose-600/20",
+  patient: "bg-violet-50 text-violet-700 ring-violet-600/20",
+};
 
 export default function AdminUserDetailPage() {
   const { user } = useAuth();
@@ -96,113 +107,124 @@ export default function AdminUserDetailPage() {
 
   return (
     <DashboardLayout>
-      <Link href="/dashboard/admin/users" className="text-sm text-primary-600 hover:text-primary-800">
-        &larr; Back to users
+      <Link href="/dashboard/admin/users" className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 transition hover:text-primary-600">
+        <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+        Back to users
       </Link>
 
       {loading ? (
-        <p className="mt-6 text-gray-500">Loading user...</p>
+        <div className="h-72 animate-pulse rounded-2xl bg-slate-100" aria-label="Loading user" />
       ) : notFound ? (
-        <p className="mt-6 text-gray-700">User not found.</p>
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <p className="text-base font-semibold text-slate-900">User not found</p>
+          <p className="mt-1 text-sm text-slate-500">This account may have been deleted.</p>
+        </div>
       ) : !form ? (
-        <div role="alert" className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
           {error}
         </div>
       ) : (
-        <form onSubmit={handleSave} className="mt-4 rounded-lg bg-white p-6 shadow" aria-label="Edit user">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{account.name}</h1>
-              <p className="text-sm text-gray-500">
-                {account.type} &middot; joined {account.date || "unknown"} &middot; ID {account.id}
-              </p>
-            </div>
-          </div>
+        <>
+          <AdminPageHeader
+            eyebrow="User profile"
+            title={account.name}
+            description={`Joined ${account.date || "unknown"} · ID ${account.id}`}
+            actions={
+              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ring-1 ring-inset ${ROLE_BADGES[account.type] || ROLE_BADGES.patient}`}>
+                {account.type}
+              </span>
+            }
+          />
 
-          {notice && (
-            <div role="status" className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-              {notice}
-            </div>
-          )}
-          {error && (
-            <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
+          <form onSubmit={handleSave} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" aria-label="Edit user">
+            {notice && (
+              <div role="status" className="mb-5 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <CheckCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                {notice}
+              </div>
+            )}
+            {error && (
+              <div role="alert" className="mb-5 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                {error}
+              </div>
+            )}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="First name" name="firstName" value={form.firstName} onChange={handleChange} required />
-            <Field label="Last name" name="lastName" value={form.lastName} onChange={handleChange} required />
-            <Field label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
-            <Field label="Phone" name="phone" value={form.phone} onChange={handleChange} />
-            <div>
-              <label htmlFor="userType" className="block text-sm font-medium text-gray-700">Role</label>
-              <select
-                id="userType"
-                name="userType"
-                value={form.userType}
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              <Field label="First name" name="firstName" value={form.firstName} onChange={handleChange} required />
+              <Field label="Last name" name="lastName" value={form.lastName} onChange={handleChange} required />
+              <Field label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
+              <Field label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+              <div>
+                <label htmlFor="userType" className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
+                <select id="userType" name="userType" value={form.userType} onChange={handleChange} disabled={isSelf} className={inputClass}>
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="admin">Admin</option>
+                </select>
+                {isSelf && <p className="mt-1.5 text-xs text-slate-500">You cannot change your own role.</p>}
+              </div>
+              <Field
+                label="New password"
+                name="password"
+                type="password"
+                value={form.password}
                 onChange={handleChange}
-                disabled={isSelf}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100"
-              >
-                <option value="patient">Patient</option>
-                <option value="doctor">Doctor</option>
-                <option value="admin">Admin</option>
-              </select>
-              {isSelf && <p className="mt-1 text-xs text-gray-500">You cannot change your own role.</p>}
+                autoComplete="new-password"
+                hint="Leave blank to keep the current password"
+              />
+              {form.userType === "doctor" && (
+                <>
+                  <Field label="Specialty" name="specialty" value={form.specialty} onChange={handleChange} />
+                  <Field label="Experience" name="experience" value={form.experience} onChange={handleChange} />
+                  <div className="md:col-span-2">
+                    <Field label="Education" name="education" value={form.education} onChange={handleChange} />
+                  </div>
+                </>
+              )}
             </div>
-            <Field
-              label="New password (leave blank to keep)"
-              name="password"
-              type="password"
-              value={form.password}
-              onChange={handleChange}
-              autoComplete="new-password"
-            />
-            {form.userType === "doctor" && (
-              <>
-                <Field label="Specialty" name="specialty" value={form.specialty} onChange={handleChange} />
-                <Field label="Experience" name="experience" value={form.experience} onChange={handleChange} />
-                <Field label="Education" name="education" value={form.education} onChange={handleChange} />
-              </>
-            )}
-          </div>
 
-          <div className="mt-6 flex items-center justify-between">
-            {!isSelf ? (
+            <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-6">
+              {!isSelf ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-rose-200 px-4 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                >
+                  <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                  Delete account
+                </button>
+              ) : (
+                <span />
+              )}
               <button
-                type="button"
-                onClick={() => setConfirmingDelete(true)}
-                className="rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                type="submit"
+                disabled={saving}
+                className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-60"
               >
-                Delete account
+                {saving ? "Saving..." : "Save changes"}
               </button>
-            ) : (
-              <span />
-            )}
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
-            >
-              {saving ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </form>
+            </div>
+          </form>
+        </>
       )}
 
       {confirmingDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-medium text-gray-900">Delete account</h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Permanently delete {account?.name}? This cannot be undone.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Delete account">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+              <TrashIcon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h3 className="mt-4 text-base font-semibold text-slate-900">Delete account</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">
+              Permanently delete <span className="font-medium text-slate-700">{account?.name}</span> and the data linked to it? This cannot be undone.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setConfirmingDelete(false)}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Keep
               </button>
@@ -210,7 +232,7 @@ export default function AdminUserDetailPage() {
                 type="button"
                 onClick={handleDelete}
                 disabled={saving}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:opacity-60"
               >
                 {saving ? "Deleting..." : "Yes, delete"}
               </button>
@@ -222,16 +244,12 @@ export default function AdminUserDetailPage() {
   );
 }
 
-function Field({ label, name, ...props }) {
+function Field({ label, name, hint, ...props }) {
   return (
     <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">{label}</label>
-      <input
-        id={name}
-        name={name}
-        {...props}
-        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-      />
+      <label htmlFor={name} className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      <input id={name} name={name} {...props} className={inputClass} />
+      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
     </div>
   );
 }

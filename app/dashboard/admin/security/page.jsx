@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import AdminSystemPage from "../../../../components/AdminSystemPage";
 
 export default function AdminSecurityPage() {
@@ -19,7 +20,7 @@ export default function AdminSecurityPage() {
             name: "Default administrator password changed",
             ok: !status.security.defaultAdminPassword,
             detail: status.security.defaultAdminPassword
-              ? "An admin account still uses the documented demo password."
+              ? "An admin account still uses the documented demo password. Change it from Settings."
               : "No administrator uses the demo password.",
           },
           {
@@ -35,29 +36,41 @@ export default function AdminSecurityPage() {
             detail: `${status.security.adminCount} administrator account(s).`,
           },
         ];
+        const passed = checks.filter((c) => c.ok).length;
         return (
           <>
-            <ul className="divide-y divide-gray-200 rounded-lg bg-white shadow">
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-slate-500">Security score</p>
+                <p className="text-sm text-slate-500"><span className="font-semibold text-slate-900">{passed}</span> of {checks.length} checks passed</p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow={passed} aria-valuemin={0} aria-valuemax={checks.length} aria-label="Security checks passed">
+                <div
+                  className={`h-2 rounded-full transition-all duration-500 ${passed === checks.length ? "bg-emerald-500" : passed >= checks.length / 2 ? "bg-amber-500" : "bg-rose-500"}`}
+                  style={{ width: `${(passed / checks.length) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <ul className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               {checks.map((check) => (
-                <li key={check.name} className="flex items-start gap-3 px-6 py-4">
+                <li key={check.name} className="flex items-start gap-4 px-6 py-5">
                   <span
-                    className={`mt-0.5 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-                      check.ok ? "bg-green-500" : "bg-red-500"
-                    }`}
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${check.ok ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}
                     aria-label={check.ok ? "Passed" : "Needs attention"}
                   >
-                    {check.ok ? "✓" : "!"}
+                    {check.ok ? <CheckIcon className="h-5 w-5" aria-hidden="true" /> : <ExclamationTriangleIcon className="h-5 w-5" aria-hidden="true" />}
                   </span>
                   <div>
-                    <p className="font-medium text-gray-900">{check.name}</p>
-                    <p className="text-sm text-gray-600">{check.detail}</p>
+                    <p className="text-sm font-semibold text-slate-900">{check.name}</p>
+                    <p className="mt-0.5 text-sm text-slate-500">{check.detail}</p>
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="mt-6 text-sm text-gray-600">
+            <p className="mt-6 text-sm text-slate-500">
               Session tokens expire after {status.security.tokenLifetime}. Manage administrator accounts and reset passwords
-              from <Link href="/dashboard/admin/users" className="text-primary-600 hover:text-primary-800">User Management</Link>.
+              from <Link href="/dashboard/admin/users" className="font-medium text-primary-600 hover:text-primary-700">User Management</Link>.
             </p>
           </>
         );

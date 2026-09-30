@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import Logo from "../../components/Logo";
 import { EnvelopeIcon } from "@heroicons/react/24/outline";
 
 function ForgotPasswordForm() {
@@ -56,16 +56,7 @@ function ForgotPasswordForm() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center">
-            <Image
-              src="/logo.png"
-              alt="Medisynix Logo"
-              width={40}
-              height={40}
-              className="h-10 w-auto"
-            />
-            <span className="ml-2 text-xl font-bold text-primary-600">
-              Medisynix
-            </span>
+            <Logo className="h-9 sm:h-10" priority />
           </Link>
         </div>
       </header>

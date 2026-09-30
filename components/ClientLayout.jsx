@@ -15,11 +15,12 @@ export default function ClientLayout({ children }) {
   
   return (
     <ClientAuthProvider>
-      <Header />
+      {/* Dashboards have their own shell: no marketing navbar or footer */}
+      {!isDashboardRoute && <Header />}
       <main className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {children}
       </main>
-      <Footer isDashboardRoute={isDashboardRoute} />
+      {!isDashboardRoute && <Footer isDashboardRoute={false} />}
       <Toaster 
         position="top-right" 
         toastOptions={{

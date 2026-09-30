@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import {
+  ArrowDownTrayIcon,
+  ClipboardDocumentListIcon,
+  DocumentChartBarIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/outline";
 import { useAuth } from "../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../components/DashboardLayout";
+import AdminPageHeader from "../../../../components/AdminPageHeader";
 import { adminRequest, downloadFile, toCsv } from "../../../../lib/admin-client";
 
 export default function AdminReportsPage() {
@@ -54,44 +62,56 @@ export default function AdminReportsPage() {
     {
       key: "users",
       title: "User Activity Report",
-      text: "All registered accounts with role and join date (CSV).",
+      text: "Every registered account with role, phone and join date.",
+      format: "CSV",
+      icon: ClipboardDocumentListIcon,
       action: userReport,
     },
     {
       key: "health",
       title: "System Health Report",
-      text: "Database mode, security checks and platform totals (JSON).",
+      text: "Database mode, security checks and platform totals.",
+      format: "JSON",
+      icon: DocumentChartBarIcon,
       action: healthReport,
     },
   ];
 
   return (
     <DashboardLayout>
-      <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-      <p className="mt-1 mb-6 text-sm text-gray-600">Generate and download platform reports</p>
+      <AdminPageHeader title="Reports" description="Generate and download platform reports" />
 
       {message && (
-        <div role="status" className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <CheckCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
           {message}
         </div>
       )}
       {error && (
-        <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div role="alert" className="mb-6 flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <XCircleIcon className="h-5 w-5 shrink-0" aria-hidden="true" />
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {reports.map((report) => (
-          <div key={report.key} className="rounded-lg border border-gray-300 bg-white p-6">
-            <h2 className="text-base font-medium text-gray-900">{report.title}</h2>
-            <p className="mb-4 mt-1 text-sm text-gray-500">{report.text}</p>
+          <div key={report.key} className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                <report.icon className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">{report.format}</span>
+            </div>
+            <h2 className="mt-4 text-base font-semibold text-slate-900">{report.title}</h2>
+            <p className="mt-1 flex-1 text-sm leading-relaxed text-slate-500">{report.text}</p>
             <button
               type="button"
               onClick={report.action}
               disabled={!!busy}
-              className="rounded bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-60"
+              className="mt-5 inline-flex w-fit items-center gap-2 rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-60"
             >
+              <ArrowDownTrayIcon className="h-4 w-4" aria-hidden="true" />
               {busy === report.key ? "Generating..." : "Generate Report"}
             </button>
           </div>

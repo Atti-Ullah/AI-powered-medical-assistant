@@ -1,301 +1,304 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
+import NotificationBell from "./NotificationBell";
+import Logo, { LogoMark } from "./Logo";
 import {
   Bars3Icon,
   XMarkIcon,
-  HomeIcon,
-  UserIcon,
+  Squares2X2Icon,
+  UserCircleIcon,
+  UsersIcon,
+  HeartIcon,
+  MagnifyingGlassCircleIcon,
+  SparklesIcon,
+  FolderOpenIcon,
   ChatBubbleLeftRightIcon,
-  DocumentTextIcon,
-  ChartBarIcon,
+  ChartBarSquareIcon,
+  DocumentChartBarIcon,
+  Cog6ToothIcon,
   ArrowRightStartOnRectangleIcon,
-  ClipboardDocumentListIcon,
-  UserGroupIcon,
-  CogIcon,
-  BellIcon,
+  ChevronDoubleLeftIcon,
+  ChevronDoubleRightIcon,
+  ShieldCheckIcon,
+  BellAlertIcon,
 } from "@heroicons/react/24/outline";
 
 const userTypeNavigation = {
   patient: [
-    { name: "Dashboard", href: "/dashboard/patient", icon: HomeIcon },
-    {
-      name: "Health Profile",
-      href: "/dashboard/patient/profile",
-      icon: UserIcon,
-    },
-    {
-      name: "Find a Doctor",
-      href: "/dashboard/patient/find-doctor",
-      icon: UserGroupIcon,
-    },
-    {
-      name: "AI Doctor",
-      href: "/dashboard/patient/ai-doctor",
-      icon: ChatBubbleLeftRightIcon,
-    },
-    {
-      name: "Medical Records",
-      href: "/dashboard/patient/records",
-      icon: DocumentTextIcon,
-    },
-    {
-      name: "Consultations",
-      href: "/dashboard/patient/consultations",
-      icon: ChatBubbleLeftRightIcon,
-    },
-    {
-      name: "Analytics",
-      href: "/dashboard/patient/analytics",
-      icon: ChartBarIcon,
-    },
+    { name: "Dashboard", href: "/dashboard/patient", icon: Squares2X2Icon },
+    { name: "Health Profile", href: "/dashboard/patient/profile", icon: HeartIcon },
+    { name: "Find a Doctor", href: "/dashboard/patient/find-doctor", icon: MagnifyingGlassCircleIcon },
+    { name: "AI Doctor", href: "/dashboard/patient/ai-doctor", icon: SparklesIcon },
+    { name: "Medical Records", href: "/dashboard/patient/records", icon: FolderOpenIcon },
+    { name: "Consultations", href: "/dashboard/patient/consultations", icon: ChatBubbleLeftRightIcon },
+    { name: "Analytics", href: "/dashboard/patient/analytics", icon: ChartBarSquareIcon },
   ],
   doctor: [
-    { name: "Dashboard", href: "/dashboard/doctor", icon: HomeIcon },
-    { name: "Profile", href: "/dashboard/doctor/profile", icon: UserIcon },
-    {
-      name: "Patients",
-      href: "/dashboard/doctor/patients",
-      icon: UserGroupIcon,
-    },
-    {
-      name: "Consultations",
-      href: "/dashboard/doctor/consultations",
-      icon: ChatBubbleLeftRightIcon,
-    },
-    {
-      name: "AI Analysis",
-      href: "/dashboard/doctor/ai-analysis",
-      icon: DocumentTextIcon,
-    },
-    {
-      name: "Analytics",
-      href: "/dashboard/doctor/analytics",
-      icon: ChartBarIcon,
-    },
+    { name: "Dashboard", href: "/dashboard/doctor", icon: Squares2X2Icon },
+    { name: "Profile", href: "/dashboard/doctor/profile", icon: UserCircleIcon },
+    { name: "Patients", href: "/dashboard/doctor/patients", icon: UsersIcon },
+    { name: "Consultations", href: "/dashboard/doctor/consultations", icon: ChatBubbleLeftRightIcon },
+    { name: "AI Analysis", href: "/dashboard/doctor/ai-analysis", icon: SparklesIcon },
+    { name: "Analytics", href: "/dashboard/doctor/analytics", icon: ChartBarSquareIcon },
   ],
   admin: [
-    { name: "Dashboard", href: "/dashboard/admin", icon: HomeIcon },
-    { name: "Users", href: "/dashboard/admin/users", icon: UserGroupIcon },
-    {
-      name: "Reports",
-      href: "/dashboard/admin/reports",
-      icon: DocumentTextIcon,
-    },
-    {
-      name: "Analytics",
-      href: "/dashboard/admin/analytics",
-      icon: ChartBarIcon,
-    },
-    { name: "Settings", href: "/dashboard/admin/settings", icon: CogIcon },
+    { name: "Dashboard", href: "/dashboard/admin", icon: Squares2X2Icon },
+    { name: "Users", href: "/dashboard/admin/users", icon: UsersIcon },
+    { name: "Reports", href: "/dashboard/admin/reports", icon: DocumentChartBarIcon },
+    { name: "Analytics", href: "/dashboard/admin/analytics", icon: ChartBarSquareIcon },
+    { name: "Alerts", href: "/dashboard/admin/alerts", icon: BellAlertIcon },
+    { name: "Security", href: "/dashboard/admin/security", icon: ShieldCheckIcon },
+    { name: "Settings", href: "/dashboard/admin/settings", icon: Cog6ToothIcon },
   ],
 };
 
-export default function DashboardLayout({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+// Set once the shell is mounted so nested DashboardLayout wrappers do not render a second one
+const ShellContext = createContext(false);
+
+const ROLE_LABELS = { patient: "Patient", doctor: "Doctor", admin: "Administrator" };
+const STORAGE_KEY = "medisynix_sidebar_collapsed";
+
+function BrandMark({ collapsed }) {
+  return (
+    <span className="flex items-center">
+      {collapsed ? (
+        <LogoMark className="h-9 w-9" variant="light" />
+      ) : (
+        <Logo className="h-9" variant="light" />
+      )}
+    </span>
+  );
+}
+
+function DashboardShell({ children }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
-  // If user is not logged in, show loading state
+  // Remember the sidebar state between visits
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(STORAGE_KEY) === "1");
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // storage unavailable
+      }
+      return next;
+    });
+  };
+
+  // Close the mobile drawer after navigating
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Keep users on their own dashboard
+  const userType = user?.type;
+  const dashboardPrefix = `/dashboard/${userType}`;
+  const onWrongDashboard = !!user && !pathname.startsWith(dashboardPrefix);
+  useEffect(() => {
+    if (onWrongDashboard) router.push(dashboardPrefix);
+  }, [onWrongDashboard, dashboardPrefix, router]);
+
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-sm text-gray-600">Loading...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-primary-600"></div>
+          <p className="mt-4 text-sm text-slate-500">Loading your workspace...</p>
         </div>
       </div>
     );
   }
-
-  // Get the user type and enforce access control
-  const userType = user.type;
-
-  // Check if user is on the correct dashboard type
-  const dashboardPrefix = `/dashboard/${userType}`;
-  if (!pathname.startsWith(dashboardPrefix)) {
-    // If not on the correct dashboard, redirect and show nothing
-    router.push(dashboardPrefix);
-    return null;
-  }
+  if (onWrongDashboard) return null;
 
   const navigation = userTypeNavigation[userType] || [];
+  const isActive = (href) =>
+    href === dashboardPrefix ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
+  const activeItem = navigation.find((item) => isActive(item.href));
+  // Pages outside the sidebar (e.g. Profile) are titled from their URL
+  const lastSegment = pathname.split("/").filter(Boolean).pop() || "";
+  const pageTitle =
+    activeItem?.name ||
+    (lastSegment && lastSegment !== userType ? lastSegment.replace(/-/g, " ").replace(/w/g, (c) => c.toUpperCase()) : "Dashboard");
+  const displayName = user.name || ROLE_LABELS[userType] || "User";
 
-  // Use either the authenticated user or our test user
-  const activeUser = user;
+  const renderNav = (isCollapsed) => (
+    <nav className="flex flex-1 flex-col px-3 py-4" aria-label="Main navigation">
+      {!isCollapsed && (
+        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Menu</p>
+      )}
+      <ul className="space-y-1">
+        {navigation.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <li key={item.name}>
+              <Link
+                href={item.href}
+                title={isCollapsed ? item.name : undefined}
+                aria-current={active ? "page" : undefined}
+                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isCollapsed ? "justify-center" : ""
+                } ${
+                  active
+                    ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
+                    : "text-slate-300 hover:bg-white/5 hover:text-white"
+                }`}
+              >
+                <item.icon
+                  className={`h-5 w-5 shrink-0 ${active ? "text-white" : "text-slate-400 group-hover:text-white"}`}
+                  aria-hidden="true"
+                />
+                {isCollapsed ? <span className="sr-only">{item.name}</span> : <span className="truncate">{item.name}</span>}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="mt-auto border-t border-white/10 pt-4">
+        <button
+          type="button"
+          onClick={logout}
+          title={isCollapsed ? "Logout" : undefined}
+          className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-300 ${
+            isCollapsed ? "justify-center" : ""
+          }`}
+        >
+          <ArrowRightStartOnRectangleIcon className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-red-300" aria-hidden="true" />
+          {isCollapsed ? <span className="sr-only">Logout</span> : "Logout"}
+        </button>
+      </div>
+    </nav>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Mobile sidebar */}
-      <div
-        className={`fixed inset-0 z-40 lg:hidden ${
-          sidebarOpen ? "" : "hidden"
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Mobile drawer */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${mobileOpen ? "" : "pointer-events-none"}`} role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen ? "true" : undefined} aria-hidden={!mobileOpen}>
+        <div
+          className={`absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? "opacity-100" : "opacity-0"}`}
+          onClick={() => setMobileOpen(false)}
+        />
+        <aside
+          className={`absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-slate-900 transition-transform duration-300 ease-in-out ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex h-16 items-center justify-between px-5">
+            <BrandMark collapsed={false} />
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+            >
+              <span className="sr-only">Close sidebar</span>
+              <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          </div>
+          {renderNav(false)}
+        </aside>
+      </div>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col bg-slate-900 transition-[width] duration-300 ease-in-out lg:flex ${
+          collapsed ? "w-[76px]" : "w-64"
         }`}
-        role="dialog"
-        aria-modal="true"
       >
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity"></div>
-        <div className="fixed inset-0 z-40 flex">
-          <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white pt-5 pb-4">
-            <div className="absolute top-0 right-0 -mr-12 pt-2">
-              <button
-                type="button"
-                className="ml-1 flex h-10 w-10 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                onClick={() => setSidebarOpen(false)}
-              >
-                <span className="sr-only">Close sidebar</span>
-                <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="flex flex-shrink-0 items-center px-4">
-              <Image
-                src="/images/logo.png"
-                alt="Medisynix Logo"
-                width={260}
-                height={80}
-                className="h-16 w-auto"
-                priority
-              />
-            </div>
-            <div className="mt-5 h-0 flex-1 overflow-y-auto">
-              <nav className="space-y-1 px-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    onClick={() => setSidebarOpen(false)}
-                  >
-                    <item.icon className="mr-4 h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
-                    {item.name}
-                  </Link>
-                ))}
-                <button
-                  onClick={() => {
-                    logout();
-                    setSidebarOpen(false);
-                  }}
-                  className="group flex w-full items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                >
-                  <ArrowRightStartOnRectangleIcon className="mr-4 h-6 w-6 flex-shrink-0 text-gray-400 group-hover:text-gray-500" />
-                  Logout
-                </button>
-              </nav>
-            </div>
-          </div>
+        <div className={`flex h-16 shrink-0 items-center border-b border-white/10 ${collapsed ? "justify-center px-2" : "px-5"}`}>
+          <Link href={dashboardPrefix} aria-label="Medisynix home">
+            <BrandMark collapsed={collapsed} />
+          </Link>
         </div>
-      </div>
+        {renderNav(collapsed)}
+      </aside>
 
-      {/* Static sidebar for desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6">
-          <div className="flex h-16 shrink-0 items-center">
-            <Link href={`/dashboard/${userType}`}>
-              <Image
-                src="/images/logo.png"
-                alt="Medisynix Logo"
-                width={300}
-                height={90}
-                className="h-20 w-auto"
-                priority
-              />
-            </Link>
-          </div>
-          <nav className="flex flex-1 flex-col">
-            <ul role="list" className="flex flex-1 flex-col gap-y-7">
-              <li>
-                <ul role="list" className="-mx-2 space-y-1">
-                  {navigation.map((item) => (
-                    <li key={item.name}>
-                      <Link
-                        href={item.href}
-                        className="group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-primary-600"
-                      >
-                        <item.icon className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-primary-600" />
-                        {item.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </li>
-              <li className="mt-auto">
-                <button
-                  onClick={logout}
-                  className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-primary-600"
-                >
-                  <ArrowRightStartOnRectangleIcon className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-primary-600" />
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-72">
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+      {/* Main column */}
+      <div className={`transition-[padding] duration-300 ease-in-out ${collapsed ? "lg:pl-[76px]" : "lg:pl-64"}`}>
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8">
           <button
             type="button"
-            className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setMobileOpen(true)}
+            aria-expanded={mobileOpen}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 lg:hidden"
           >
             <span className="sr-only">Open sidebar</span>
-            <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+            <Bars3Icon className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
+          >
+            {collapsed ? (
+              <ChevronDoubleRightIcon className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <ChevronDoubleLeftIcon className="h-4 w-4" aria-hidden="true" />
+            )}
           </button>
 
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex-1" />
-            <div className="flex items-center gap-x-4 lg:gap-x-6">
-              <button
-                type="button"
-                className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500"
-              >
-                <span className="sr-only">View notifications</span>
-                <BellIcon className="h-6 w-6" aria-hidden="true" />
-              </button>
-
-              {/* Profile dropdown */}
-              <div className="relative">
-                <Link
-                  href={`/dashboard/${userType}/profile`}
-                  className="flex items-center gap-x-4 text-sm font-semibold leading-6 text-gray-900"
-                >
-                  <span className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                    {activeUser.name
-                      ? activeUser.name.charAt(0).toUpperCase()
-                      : userType === "patient"
-                      ? "P"
-                      : userType === "doctor"
-                      ? "D"
-                      : "A"}
-                  </span>
-                  <span className="hidden lg:flex lg:items-center">
-                    <span className="ml-4 text-sm font-semibold leading-6 text-gray-900">
-                      {activeUser.name ||
-                        (userType === "patient"
-                          ? "Patient"
-                          : userType === "doctor"
-                          ? "Doctor"
-                          : "Admin")}
-                    </span>
-                  </span>
-                </Link>
-              </div>
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-slate-900">{pageTitle}</p>
+            <p className="hidden truncate text-xs text-slate-500 sm:block">{ROLE_LABELS[userType]} workspace</p>
           </div>
-        </div>
 
-        <main className="py-10">
-          <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <NotificationBell user={user} />
+
+          <div className="h-6 w-px bg-slate-200" aria-hidden="true" />
+
+          <Link
+            href={`/dashboard/${userType}/profile`}
+            className="flex items-center gap-3 rounded-lg py-1 pl-1 pr-2 transition-colors hover:bg-slate-100"
+          >
+            {user.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+            ) : (
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-sm font-semibold text-white">
+                {displayName.charAt(0).toUpperCase()}
+              </span>
+            )}
+            <span className="hidden text-left leading-tight sm:block">
+              <span className="block max-w-[10rem] truncate text-sm font-semibold text-slate-900">{displayName}</span>
+              <span className="block text-xs text-slate-500">{ROLE_LABELS[userType]}</span>
+            </span>
+          </Link>
+        </header>
+
+        <main className="px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>
     </div>
+  );
+}
+
+// Renders the dashboard shell once; pages that still wrap themselves in it simply pass through
+export default function DashboardLayout({ children }) {
+  const insideShell = useContext(ShellContext);
+  if (insideShell) return children;
+  return (
+    <ShellContext.Provider value={true}>
+      <DashboardShell>{children}</DashboardShell>
+    </ShellContext.Provider>
   );
 }

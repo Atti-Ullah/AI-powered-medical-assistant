@@ -219,7 +219,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import Logo from "./Logo";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -266,7 +266,7 @@ export default function Header() {
         {/* Logo */}
         <div className="flex lg:flex-1">
           <Link href={user ? `/dashboard/${user.type}` : "/"} className="-m-1.5 p-1.5 flex items-center">
-            <Image src="/images/logo.png" alt="Medisynix Logo" width={300} height={90} className="h-20 w-auto" priority />
+            <Logo className="h-9 sm:h-11 lg:h-12" priority />
           </Link>
         </div>
 
@@ -316,7 +316,7 @@ export default function Header() {
         <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm">
           <div className="flex items-center justify-between">
             <Link href={user ? `/dashboard/${user.type}` : "/"} className="-m-1.5 p-1.5">
-              <Image src="/images/logo.png" alt="Medisynix Logo" width={260} height={80} className="h-16 w-auto" priority />
+              <Logo className="h-9 sm:h-10" />
             </Link>
             <button onClick={() => setMobileMenuOpen(false)} className="-m-2.5 rounded-md p-2.5 text-gray-700">
               <XMarkIcon className="h-6 w-6" />

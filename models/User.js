@@ -64,6 +64,19 @@ const UserSchema = new mongoose.Schema({
   education: {
     type: String
   },
+  // For administrators
+  adminRole: {
+    type: String
+  },
+  department: {
+    type: String
+  },
+  permissions: {
+    type: String
+  },
+  avatar: {
+    type: String
+  },
   // Password reset fields
   resetToken: {
     type: String

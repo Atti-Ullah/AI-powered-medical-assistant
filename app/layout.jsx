@@ -10,14 +10,11 @@ export const metadata = {
     "Medisynix is an innovative AI-powered healthcare platform designed to revolutionize medical diagnostics, patient care, and healthcare management.",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "32x32" },
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
     ],
     apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
-    other: [
-      { rel: "mask-icon", url: "/safari-pinned-tab.svg", color: "#5bbad5" },
-    ],
   },
   manifest: "/site.webmanifest",
 };
@@ -26,7 +23,6 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" />
         <link
           rel="apple-touch-icon"
           sizes="180x180"
@@ -45,7 +41,6 @@ export default function RootLayout({ children }) {
           href="/favicon-16x16.png"
         />
         <link rel="manifest" href="/site.webmanifest" />
-        <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5" />
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="theme-color" content="#ffffff" />
       </head>

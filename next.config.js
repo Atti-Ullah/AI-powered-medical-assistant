@@ -2,6 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Keep the dev-only indicator clear of the sidebar's Logout button
+  devIndicators: { position: 'bottom-right' },
   async headers() {
     return [
       {
