@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { getUserConsultations } from '../../../../lib/static-data';
 import { verifyToken } from '../../../../lib/jwt';
 import { ObjectId } from 'mongodb';
 
@@ -32,7 +33,7 @@ export async function GET(request) {
     const requestedUserId = userId || authenticatedUserId;
     
     // Only allow access to own consultations unless admin
-    if (authenticatedUserId !== requestedUserId && !verified.isAdmin) {
+    if (authenticatedUserId !== requestedUserId && verified.type !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 403 }
@@ -46,8 +47,12 @@ export async function GET(request) {
       );
     }
 
-    // Connect to database
-    const { db } = await connectToDatabase();
+    // Connect to database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ consultations: getUserConsultations(requestedUserId), fallback: true });
+    }
+    const { db } = conn;
     
     // Format user ID for MongoDB query
     const userObjectId = ObjectId.isValid(requestedUserId) ? new ObjectId(requestedUserId) : requestedUserId;

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "../contexts/AuthContext";
+import { adminRequest, buildAlerts, formatUptime } from "../lib/admin-client";
 import {
   UserGroupIcon,
   UserIcon,
@@ -13,6 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default function AdminDashboardContent() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("users");
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -23,6 +26,9 @@ export default function AdminDashboardContent() {
     platformStats: [],
   });
   const [recentUsers, setRecentUsers] = useState([]);
+  const [systemStatus, setSystemStatus] = useState(null);
+  const [showStatus, setShowStatus] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   // Fetch dashboard data
   useEffect(() => {
@@ -31,7 +37,9 @@ export default function AdminDashboardContent() {
         setIsLoading(true);
 
         // Fetch users from the file system
-        const response = await fetch("/api/admin/dashboard-stats");
+        const response = await fetch("/api/admin/dashboard-stats", {
+          headers: { Authorization: `Bearer ${user?.token}` },
+        });
         if (!response.ok) {
           throw new Error("Failed to fetch dashboard data");
         }
@@ -43,32 +51,24 @@ export default function AdminDashboardContent() {
           {
             name: "Total Users",
             value: data.totalUsers.toString(),
-            change: "+15%", // Placeholder for now
-            trend: "up",
             icon: UserGroupIcon,
             color: "bg-blue-500",
           },
           {
             name: "Active Doctors",
             value: data.activeDoctors.toString(),
-            change: "+8%", // Placeholder for now
-            trend: "up",
             icon: UserIcon,
             color: "bg-green-500",
           },
           {
             name: "Active Patients",
             value: data.activePatients.toString(),
-            change: "+17%", // Placeholder for now
-            trend: "up",
             icon: UserGroupIcon,
             color: "bg-purple-500",
           },
           {
             name: "Consultations",
             value: data.consultations.toString(),
-            change: "+23%", // Placeholder for now
-            trend: "up",
             icon: DocumentTextIcon,
             color: "bg-yellow-500",
           },
@@ -79,45 +79,33 @@ export default function AdminDashboardContent() {
           platformStats,
         });
         setRecentUsers(data.recentUsers || []);
+        setLoadError("");
+
+        // Live health data powers the alerts and the System Status dialog
+        try {
+          const statusResult = await adminRequest(user.token, "/api/admin/system-status");
+          setSystemStatus(statusResult.data);
+        } catch (statusError) {
+          console.error("Error fetching system status:", statusError);
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        setLoadError("Could not load dashboard data. Please refresh to try again.");
       } finally {
         setIsLoading(false);
       }
     };
 
+    if (!user?.token) return;
     fetchDashboardData();
 
     // Refresh data every 60 seconds
     const interval = setInterval(fetchDashboardData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.token]);
 
-  // System alerts (static for now)
-  const systemAlerts = [
-    {
-      id: 1,
-      title: "System Update Scheduled",
-      description:
-        "Maintenance update scheduled for June 20, 2023 at 02:00 UTC.",
-      severity: "info",
-      date: "2023-06-15",
-    },
-    {
-      id: 2,
-      title: "Database Performance",
-      description: "Patient records database showing increased query times.",
-      severity: "warning",
-      date: "2023-06-14",
-    },
-    {
-      id: 3,
-      title: "Storage Capacity Alert",
-      description: "Medical imaging storage approaching 85% capacity.",
-      severity: "warning",
-      date: "2023-06-13",
-    },
-  ];
+  // System alerts come from the live health check
+  const systemAlerts = buildAlerts(systemStatus);
 
   const quickActions = [
     {
@@ -159,20 +147,72 @@ export default function AdminDashboardContent() {
         <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
           <button
             type="button"
+            onClick={() => setShowStatus(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             <ServerIcon className="-ml-1 mr-2 h-5 w-5 text-gray-500" />
             System Status
           </button>
-          <button
-            type="button"
+          <Link
+            href="/dashboard/admin/users?new=1"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             <UserGroupIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
             Add New User
-          </button>
+          </Link>
         </div>
       </div>
+
+      {loadError && (
+        <div
+          role="alert"
+          className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        >
+          {loadError}
+        </div>
+      )}
+
+      {showStatus && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="System status"
+        >
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-medium text-gray-900">System Status</h3>
+            {systemStatus ? (
+              <dl className="mt-4 divide-y divide-gray-100 text-sm">
+                {[
+                  ["Database", systemStatus.database.connected ? "Connected (MongoDB)" : "Unavailable - using local file store"],
+                  ["Environment", systemStatus.server.environment],
+                  ["Node.js", systemStatus.server.nodeVersion],
+                  ["Uptime", formatUptime(systemStatus.server.uptimeSeconds)],
+                  ["Users", systemStatus.totals.users],
+                  ["Appointments", systemStatus.totals.appointments],
+                  ["Checked", new Date(systemStatus.checkedAt).toLocaleString()],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between py-2">
+                    <dt className="text-gray-500">{label}</dt>
+                    <dd className="font-medium text-gray-900">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="mt-4 text-sm text-gray-500">Status is not available yet.</p>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowStatus(false)}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -213,13 +253,6 @@ export default function AdminDashboardContent() {
                 <dd className="ml-16 flex items-baseline">
                   <p className="text-2xl font-semibold text-gray-900">
                     {stat.value}
-                  </p>
-                  <p
-                    className={`ml-2 flex items-baseline text-sm font-semibold text-green-600`}
-                  >
-                    <ArrowTrendingUpIcon className="self-center flex-shrink-0 h-5 w-5 text-green-500" />
-                    <span className="sr-only">Increased by</span>
-                    {stat.change}
                   </p>
                 </dd>
               </div>
@@ -413,12 +446,12 @@ export default function AdminDashboardContent() {
                           >
                             View
                           </Link>
-                          <button
-                            type="button"
+                          <Link
+                            href={`/dashboard/admin/users/${user.id}`}
                             className="text-primary-600 hover:text-primary-900"
                           >
                             Edit
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     ))
@@ -510,12 +543,12 @@ export default function AdminDashboardContent() {
                   <p className="text-sm text-gray-500 mb-4">
                     Analysis of user logins, registrations, and active sessions.
                   </p>
-                  <button
-                    type="button"
+                  <Link
+                    href="/dashboard/admin/reports"
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
                     Generate Report
-                  </button>
+                  </Link>
                 </div>
                 <div className="border border-gray-300 rounded-md p-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-2">
@@ -524,12 +557,12 @@ export default function AdminDashboardContent() {
                   <p className="text-sm text-gray-500 mb-4">
                     Overview of system performance, errors, and bottlenecks.
                   </p>
-                  <button
-                    type="button"
+                  <Link
+                    href="/dashboard/admin/reports"
                     className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                   >
                     Generate Report
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

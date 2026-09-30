@@ -1,24 +1,12 @@
 import { NextResponse } from 'next/server';
-import '../../../../lib/slowbuffer-patch';
-import jwt from 'jsonwebtoken';
 import { connectToDatabase } from '../../../../lib/mongodb';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-for-development-only';
+import { getBearerToken, verifyToken as verifyJwt } from '../../../../lib/jwt';
 
 // Helper function to verify JWT token
 const verifyToken = (request) => {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-    
-    const token = authHeader.split(' ')[1];
-    return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    console.error('Token verification error:', error);
-    return null;
-  }
+  const decoded = verifyJwt(getBearerToken(request));
+  // Only AI Doctor session tokens (issued by /api/doctor/init) are accepted here
+  return decoded && decoded.doctorType && decoded.userId ? decoded : null;
 };
 
 export async function GET(request) {

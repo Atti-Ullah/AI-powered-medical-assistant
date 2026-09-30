@@ -30,179 +30,66 @@ export default function DoctorProfilePage() {
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
 
-  // Sample doctor data - in a real app, this would come from an API call
-  const sampleDoctors = [
-    {
-      id: 1,
-      name: "Dr. Fatima Ali",
-      image: "/images/doctors/doctor1.jpg",
-      specialty: "Cardiologist",
-      location: "Islamabad",
-      hospital: "Medisynix Medical Center",
-      experience: "12 years",
-      rating: 4.8,
-      reviews: 124,
-      nextAvailable: "2023-07-15",
-      availableTimeSlots: ["09:00 AM", "11:30 AM", "02:00 PM", "04:30 PM"],
-      about:
-        "Dr. Fatima Ali is a board-certified cardiologist with extensive experience in diagnosing and treating heart conditions. She specializes in preventive cardiology and heart disease management.",
-      education:
-        "MBBS from King Edward Medical University, Fellowship in Cardiology from Agha Khan University Hospital",
-      certifications: [
-        "American Board of Internal Medicine - Cardiovascular Disease",
-        "Advanced Cardiac Life Support (ACLS)",
-        "Pakistan Cardiac Society - Fellow",
-      ],
-      languages: ["English", "Urdu", "Punjabi"],
-      consultationFee: 3000,
-      services: [
-        "Cardiac Consultation and Evaluation",
-        "Electrocardiogram (ECG/EKG) Interpretation",
-        "Echocardiography",
-        "Stress Testing",
-        "Holter Monitoring",
-        "Heart Disease Risk Assessment",
-        "Preventive Cardiology",
-        "Management of Hypertension",
-        "Coronary Artery Disease Management",
-        "Heart Failure Management",
-      ],
-      workingHours: {
-        "Monday to Friday": "9:00 AM - 5:00 PM",
-        Saturday: "9:00 AM - 1:00 PM",
-        Sunday: "Closed",
-      },
-      patientReviews: [
-        {
-          id: 1,
-          name: "Ahmed Hassan",
-          date: "2023-05-18",
-          rating: 5,
-          comment:
-            "Dr. Fatima is an excellent cardiologist. She took the time to listen to my concerns and explain everything in detail. Highly recommend her services.",
-        },
-        {
-          id: 2,
-          name: "Saima Khan",
-          date: "2023-04-22",
-          rating: 4,
-          comment:
-            "Very professional and knowledgeable. The staff was also very helpful. I felt well cared for during my visit.",
-        },
-        {
-          id: 3,
-          name: "Muhammad Ali",
-          date: "2023-03-15",
-          rating: 5,
-          comment:
-            "Dr. Fatima Ali provided exceptional care for my heart condition. She is compassionate and thorough in her approach.",
-        },
-      ],
-      availableDates: [
-        "2023-07-15",
-        "2023-07-16",
-        "2023-07-17",
-        "2023-07-18",
-        "2023-07-19",
-      ],
-    },
-    {
-      id: 2,
-      name: "Dr. Ahmed Khan",
-      image: "/images/doctors/doctor2.jpg",
-      specialty: "Neurologist",
-      location: "Lahore",
-      hospital: "City Medical Complex",
-      experience: "15 years",
-      rating: 4.9,
-      reviews: 156,
-      nextAvailable: "2023-07-17",
-      availableTimeSlots: ["10:00 AM", "01:30 PM", "03:00 PM", "05:30 PM"],
-      about:
-        "Dr. Ahmed Khan is a leading neurologist specializing in the diagnosis and treatment of neurological disorders, including headaches, epilepsy, stroke, and multiple sclerosis.",
-      education:
-        "MBBS from Allama Iqbal Medical College, MD in Neurology from Johns Hopkins University",
-      certifications: [
-        "Board Certified in Neurology",
-        "Pakistan Society of Neurology - Senior Member",
-        "International Headache Society - Member",
-      ],
-      languages: ["English", "Urdu", "Punjabi", "Arabic"],
-      consultationFee: 3500,
-      services: [
-        "Neurological Consultation and Evaluation",
-        "Headache Diagnosis and Management",
-        "Epilepsy Treatment",
-        "Multiple Sclerosis Management",
-        "Stroke Prevention and Recovery",
-        "Movement Disorders Treatment",
-        "Neuromuscular Disorders",
-        "Sleep Disorders",
-        "EEG Interpretation",
-        "Botox Treatment for Migraines",
-      ],
-      workingHours: {
-        "Monday to Thursday": "9:00 AM - 6:00 PM",
-        Friday: "2:00 PM - 6:00 PM",
-        Saturday: "10:00 AM - 2:00 PM",
-        Sunday: "Closed",
-      },
-      patientReviews: [
-        {
-          id: 1,
-          name: "Sara Ahmed",
-          date: "2023-06-10",
-          rating: 5,
-          comment:
-            "Dr. Ahmed Khan is an excellent neurologist. His diagnosis and treatment plan for my migraines has significantly improved my quality of life.",
-        },
-        {
-          id: 2,
-          name: "Imran Sheikh",
-          date: "2023-05-05",
-          rating: 5,
-          comment:
-            "Very thorough and detailed in his approach. Explains everything clearly and takes time to answer all questions.",
-        },
-        {
-          id: 3,
-          name: "Ayesha Malik",
-          date: "2023-04-12",
-          rating: 4,
-          comment:
-            "Great doctor with excellent bedside manner. The wait time was a bit long, but the quality of care made up for it.",
-        },
-      ],
-      availableDates: [
-        "2023-07-17",
-        "2023-07-18",
-        "2023-07-19",
-        "2023-07-20",
-        "2023-07-21",
-      ],
-    },
-    // Add data for rest of the doctors similar to what's in find-doctor/page.jsx
-  ];
+  const [allDoctors, setAllDoctors] = useState([]);
+
+  // Next few weekdays a patient can pick from (the API only supplies time slots)
+  const getUpcomingDates = () => {
+    const dates = [];
+    const day = new Date();
+    while (dates.length < 5) {
+      day.setDate(day.getDate() + 1);
+      if (day.getDay() !== 0 && day.getDay() !== 6) {
+        dates.push(day.toISOString().split("T")[0]);
+      }
+    }
+    return dates;
+  };
 
   useEffect(() => {
-    // Simulate API fetch - in a real app, you would fetch the doctor by ID from an API
-    setLoading(true);
-    setTimeout(() => {
-      const doctorData = sampleDoctors.find(
-        (d) => d.id.toString() === params.id
-      );
-      setDoctor(doctorData || null);
-      setLoading(false);
+    let cancelled = false;
+    async function loadDoctor() {
+      setLoading(true);
+      try {
+        const [doctorRes, listRes] = await Promise.all([
+          fetch(`/api/doctors/${params.id}`),
+          fetch("/api/doctors"),
+        ]);
+        const doctorResult = await doctorRes.json();
+        const listResult = await listRes.json();
+        if (cancelled) return;
 
-      // Set first available date as default
-      if (
-        doctorData &&
-        doctorData.availableDates &&
-        doctorData.availableDates.length > 0
-      ) {
-        setSelectedDate(doctorData.availableDates[0]);
+        if (doctorRes.ok && doctorResult.success) {
+          const availableDates = getUpcomingDates();
+          setDoctor({
+            rating: 0,
+            reviews: 0,
+            languages: ["English", "Urdu"],
+            services: [],
+            certifications: [],
+            patientReviews: [],
+            workingHours: {
+              "Monday - Friday": "09:00 AM - 05:00 PM",
+              "Saturday - Sunday": "Closed",
+            },
+            ...doctorResult.data,
+            availableDates,
+          });
+          setSelectedDate(availableDates[0]);
+        } else {
+          setDoctor(null);
+        }
+        if (listResult.success) setAllDoctors(listResult.data);
+      } catch (error) {
+        console.error("Error loading doctor:", error);
+        if (!cancelled) setDoctor(null);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-    }, 1000);
+    }
+    loadDoctor();
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   if (!user) {
@@ -348,14 +235,6 @@ export default function DoctorProfilePage() {
               >
                 <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
                 Chat Now
-              </a>
-
-              <a
-                href={`/dashboard/patient/call?doctor=${doctor.id}`}
-                className="px-4 py-2 bg-white text-green-600 border border-green-600 rounded-md hover:bg-green-50 transition inline-flex items-center"
-              >
-                <PhoneIcon className="h-5 w-5 mr-2" />
-                Call Doctor
               </a>
             </div>
           </div>
@@ -576,7 +455,7 @@ export default function DoctorProfilePage() {
               <a
                 href={
                   selectedDate && selectedTimeSlot
-                    ? `/dashboard/patient/appointments/book?doctor=${
+                    ? `/dashboard/patient/appointments?doctor=${
                         doctor.id
                       }&date=${selectedDate}&time=${encodeURIComponent(
                         selectedTimeSlot
@@ -625,7 +504,7 @@ export default function DoctorProfilePage() {
               Similar Doctors
             </h2>
             <div className="space-y-4">
-              {sampleDoctors
+              {allDoctors
                 .filter(
                   (d) => d.specialty === doctor.specialty && d.id !== doctor.id
                 )

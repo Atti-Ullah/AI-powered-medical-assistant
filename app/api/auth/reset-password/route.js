@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { resetPasswordWithToken } from '../../../../lib/static-data';
 
 export async function POST(request) {
   try {
@@ -9,7 +10,10 @@ export async function POST(request) {
     const { token, email, password } = await request.json();
     
     // Validate required fields
-    if (!token || !email || !password) {
+    if (
+      !token || !email || !password ||
+      typeof token !== 'string' || typeof email !== 'string' || typeof password !== 'string'
+    ) {
       return NextResponse.json({ 
         success: false, 
         message: 'Token, email, and password are required' 
@@ -30,10 +34,19 @@ export async function POST(request) {
       .update(token)
       .digest('hex');
     
-    console.log(`Processing password reset for email: ${email}`);
-    
-    // Connect to MongoDB
-    const { db } = await connectToDatabase();
+    // Connect to MongoDB (static fallback when unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      const newHash = await bcrypt.hash(password, await bcrypt.genSalt(10));
+      if (!resetPasswordWithToken(email, hashedToken, newHash)) {
+        return NextResponse.json({ success: false, message: 'Invalid or expired token' }, { status: 400 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: 'Password has been reset successfully. Please log in with your new password.'
+      });
+    }
+    const { db } = conn;
     
     // Find user by email and token, and ensure token is not expired
     const user = await db.collection('users').findOne({
@@ -68,18 +81,16 @@ export async function POST(request) {
       }
     );
     
-    console.log('Password reset successful for user:', email);
-    
     // Return success response
     return NextResponse.json({
       success: true,
       message: 'Password has been reset successfully. Please log in with your new password.'
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    console.error('Reset password error:', error.message);
     return NextResponse.json({
       success: false,
-      message: error.message || 'An error occurred. Please try again later.'
+      message: 'An error occurred. Please try again later.'
     }, { status: 500 });
   }
 } 

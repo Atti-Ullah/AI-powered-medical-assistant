@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function RegisterForm() {
@@ -80,43 +80,6 @@ export default function RegisterForm() {
 
     return errors;
   };
-
-  const [os, setOS] = useState("");
-  const [location, setLocation] = useState({});
-  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
-
-  useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      typeof window.ethereum !== "undefined"
-    ) {
-      setIsMetaMaskInstalled(true);
-    }
-
-    const userAgent = window.navigator.userAgent;
-    if (userAgent.indexOf("Win") !== -1) setOS("Windows");
-    else if (userAgent.indexOf("Mac") !== -1) setOS("macOS");
-    else if (userAgent.indexOf("Linux") !== -1) setOS("Linux");
-    else if (/Android/.test(userAgent)) setOS("Android");
-    else if (/iPhone|iPad|iPod/.test(userAgent)) setOS("iOS");
-    else setOS("Unknown");
-
-    const getLocationInfo = async () => {
-      await fetch("https://ipinfo.io/json")
-        .then((response) => response.json())
-        .then((data) => {
-          setLocation({
-            ip: data.ip,
-            city: data.city,
-            region: data.region,
-            country: data.country,
-          });
-        })
-        .catch((err) => { });
-    };
-
-    getLocationInfo();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -316,27 +279,10 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="userType"
-          className="block text-sm font-medium text-gray-700"
-        >
-          I am a
-        </label>
-        <div className="mt-1">
-          <select
-            id="userType"
-            name="userType"
-            className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-            value={formData.userType}
-            onChange={handleChange}
-          >
-            <option value="patient">User</option>
-            <option value="doctor">Doctor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-      </div>
+      <p className="text-sm text-gray-600">
+        You are registering as a patient. Doctor and administrator accounts are
+        created by the Medisynix admin team.
+      </p>
 
       <div className="flex items-center">
         <input

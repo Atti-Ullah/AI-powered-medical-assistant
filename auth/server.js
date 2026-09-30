@@ -8,9 +8,16 @@ require("dotenv").config();
 
 const app = express();
 
+if (!process.env.JWT_SECRET) {
+  console.warn("JWT_SECRET is not set: protected routes will reject every token.");
+}
+
 // Init middleware
-app.use(cors());
-app.use(express.json({ extended: false }));
+// Only the configured front-end origin(s) may call this API from a browser
+const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:3000").split(",").map((o) => o.trim());
+app.use(cors({ origin: allowedOrigins }));
+app.disable("x-powered-by");
+app.use(express.json({ limit: "100kb" }));
 
 // Routes
 app.use("/api/auth", require("./routes/auth"));

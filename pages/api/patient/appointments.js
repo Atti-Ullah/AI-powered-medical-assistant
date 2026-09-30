@@ -4,9 +4,18 @@ import User from '../../../models/User';
 import {
   getUserAppointments,
   createAppointment as createStaticAppointment,
+  updateAppointment as updateStaticAppointment,
+  getAllAppointments,
 } from '../../../lib/static-data';
+import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
+  const authUser = getAuthUser(req);
+  if (!authUser) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  req.authUser = authUser;
+
   // Handle different HTTP methods
   switch (req.method) {
     case 'GET':
@@ -26,6 +35,10 @@ async function getAppointments(req, res) {
 
   if (!userId) {
     return res.status(400).json({ success: false, message: 'User ID is required' });
+  }
+
+  if (!canAccessUser(req.authUser, userId)) {
+    return res.status(403).json({ success: false, message: 'Not allowed to view these appointments' });
   }
 
   try {
@@ -73,10 +86,14 @@ async function getAppointments(req, res) {
 
 // Create a new appointment
 async function createNewAppointment(req, res) {
-  const appointmentData = req.body;
+  const appointmentData = req.body || {};
 
   if (!appointmentData.patientId) {
     return res.status(400).json({ success: false, message: 'Patient ID is required' });
+  }
+
+  if (!canAccessUser(req.authUser, appointmentData.patientId)) {
+    return res.status(403).json({ success: false, message: 'Not allowed to book for another patient' });
   }
 
   try {
@@ -120,39 +137,62 @@ async function createNewAppointment(req, res) {
 
 // Update an existing appointment
 async function updateExistingAppointment(req, res) {
+  const { appointmentId, date, time, status, reason, notes } = req.body || {};
+
+  if (!appointmentId) {
+    return res.status(400).json({ success: false, message: 'Appointment ID is required' });
+  }
+
+  // Only these fields may be changed
+  const updatedData = Object.fromEntries(
+    Object.entries({ date, time, status, reason, notes }).filter(([, v]) => typeof v === 'string')
+  );
+
   try {
     await dbConnect();
-    
-    const { appointmentId, ...updatedData } = req.body;
-    
-    if (!appointmentId) {
-      return res.status(400).json({ success: false, message: 'Appointment ID is required' });
+
+    // Only the owning patient (or an admin) may change an appointment
+    const existing = await Appointment.findById(appointmentId).lean();
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
-    
-    // Add updated timestamp
+    if (!canAccessUser(req.authUser, existing.patientId)) {
+      return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
+    }
+
     updatedData.updatedAt = new Date();
-    
-    // Update the appointment
+
     const updatedAppointment = await Appointment.findByIdAndUpdate(
       appointmentId,
       { $set: updatedData },
       { new: true, runValidators: true } // Return updated document and run schema validators
     );
-    
+
     if (!updatedAppointment) {
       return res.status(404).json({ success: false, message: 'Appointment not found' });
     }
-    
-    // Return the updated appointment
+
     return res.status(200).json({
       success: true,
       data: updatedAppointment
     });
   } catch (error) {
-    console.error('Error updating appointment:', error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to update appointment'
+    console.error('DB appointment update unavailable, using static fallback:', error.message);
+
+    // Static demo fallback (works without a live MongoDB connection)
+    const existing = getAllAppointments().find((appt) => appt.id === appointmentId);
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Appointment not found' });
+    }
+    if (!canAccessUser(req.authUser, existing.patientId)) {
+      return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
+    }
+
+    const updated = updateStaticAppointment(appointmentId, updatedData);
+    return res.status(200).json({
+      success: true,
+      fallback: true,
+      data: updated,
     });
   }
-} 
+}

@@ -1,34 +1,20 @@
 import { NextResponse } from 'next/server';
-import '../../../../lib/slowbuffer-patch';
-import jwt from 'jsonwebtoken';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { addMedicalRecord } from '../../../../lib/static-data';
+import { getAuthUser } from '../../../../lib/jwt';
 
 export async function POST(request) {
   try {
-    // Extract the authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify the login token; records always belong to the authenticated user
+    const authUser = getAuthUser(request);
+    if (!authUser) {
       return NextResponse.json(
-        { error: 'Unauthorized: No token provided' },
+        { error: 'Unauthorized: missing or invalid token' },
         { status: 401 }
       );
     }
 
-    // Extract and verify the token
-    const token = authHeader.split(' ')[1];
-    const jwtSecret = process.env.JWT_SECRET || 'development_secret_key';
-    
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    const userId = decoded.userId;
+    const userId = authUser.id;
     
     // Parse request body
     const body = await request.json();
@@ -42,8 +28,8 @@ export async function POST(request) {
       );
     }
     
-    // Connect to the database
-    const { db } = await connectToDatabase();
+    // Connect to the database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
     
     // Create record object
     const record = {
@@ -59,6 +45,18 @@ export async function POST(request) {
       updatedAt: new Date()
     };
     
+    if (!conn) {
+      const { createdAt, updatedAt, ...fields } = record;
+      const saved = addMedicalRecord(fields);
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: 'Medical record uploaded successfully',
+        recordId: saved._id
+      });
+    }
+    const { db } = conn;
+
     // Insert the record into the database
     const result = await db.collection('medical_records').insertOne(record);
     

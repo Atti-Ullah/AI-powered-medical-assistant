@@ -1,7 +1,7 @@
 // import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // // Initialize the Google Generative AI with your API key directly
-// const GEMINI_API_KEY = 'AIzaSyAbbalJSTZt-r7RDEG4VGkiwdEduZD04X4';
+// const GEMINI_API_KEY = process.env.GEMINI_API_KEY; // never hard-code API keys
 // const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 // // Medical assistant system instructions

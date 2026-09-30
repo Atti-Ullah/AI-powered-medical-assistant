@@ -12,7 +12,7 @@ import {
 
 export default function UploadRecordPage() {
   const router = useRouter();
-  const { user, getAuthToken } = useAuth();
+  const { user, getToken } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -85,7 +85,7 @@ export default function UploadRecordPage() {
       // In a production app, you would first upload the file to a storage service
       // and then use the returned URL in the payload
       
-      const token = await getAuthToken();
+      const token = await getToken();
       const payload = {
         title: formData.title,
         type: formData.type,

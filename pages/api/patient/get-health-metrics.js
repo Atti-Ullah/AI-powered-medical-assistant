@@ -2,6 +2,7 @@ import dbConnect from '../../../lib/db';
 import HealthMetric from '../../../models/HealthMetric';
 import User from '../../../models/User';
 import { getUserHealthMetrics } from '../../../lib/static-data';
+import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
   // Only allow GET method
@@ -13,6 +14,14 @@ export default async function handler(req, res) {
 
   if (!userId) {
     return res.status(400).json({ success: false, message: 'User ID is required' });
+  }
+
+  const authUser = getAuthUser(req);
+  if (!authUser) {
+    return res.status(401).json({ success: false, message: 'Authentication required' });
+  }
+  if (!canAccessUser(authUser, userId)) {
+    return res.status(403).json({ success: false, message: 'Not allowed to view these health metrics' });
   }
 
   try {

@@ -42,11 +42,6 @@ function ForgotPasswordForm() {
         throw new Error(data.message || "An error occurred");
       }
 
-      // For development, show the reset URL
-      if (data.resetUrl) {
-        console.log("Reset URL (development only):", data.resetUrl);
-      }
-
       setStatus("success");
     } catch (error) {
       console.error("Forgot password error:", error);

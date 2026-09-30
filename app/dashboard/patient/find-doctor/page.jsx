@@ -16,6 +16,7 @@ export default function FindDoctorPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [doctors, setDoctors] = useState([]);
+  const [loadError, setLoadError] = useState("");
   const [filteredDoctors, setFilteredDoctors] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
@@ -49,125 +50,27 @@ export default function FindDoctorPage() {
     "Rawalpindi",
   ];
 
-  // Sample doctor data
-  const sampleDoctors = [
-    {
-      id: 1,
-      name: "Dr. Fatima Ali",
-      image: "/images/doctors/doctor1.jpg",
-      specialty: "Cardiologist",
-      location: "Islamabad",
-      hospital: "Medisynix Medical Center",
-      experience: "12 years",
-      rating: 4.8,
-      reviews: 124,
-      nextAvailable: "2023-07-15",
-      availableTimeSlots: ["09:00 AM", "11:30 AM", "02:00 PM", "04:30 PM"],
-      about:
-        "Dr. Fatima Ali is a board-certified cardiologist with extensive experience in diagnosing and treating heart conditions. She specializes in preventive cardiology and heart disease management.",
-      education:
-        "MBBS from King Edward Medical University, Fellowship in Cardiology from Agha Khan University Hospital",
-      consultationFee: 3000,
-    },
-    {
-      id: 2,
-      name: "Dr. Ahmed Khan",
-      image: "/images/doctors/doctor2.jpg",
-      specialty: "Neurologist",
-      location: "Lahore",
-      hospital: "City Medical Complex",
-      experience: "15 years",
-      rating: 4.9,
-      reviews: 156,
-      nextAvailable: "2023-07-17",
-      availableTimeSlots: ["10:00 AM", "01:30 PM", "03:00 PM", "05:30 PM"],
-      about:
-        "Dr. Ahmed Khan is a leading neurologist specializing in the diagnosis and treatment of neurological disorders, including headaches, epilepsy, stroke, and multiple sclerosis.",
-      education:
-        "MBBS from Allama Iqbal Medical College, MD in Neurology from Johns Hopkins University",
-      consultationFee: 3500,
-    },
-    {
-      id: 3,
-      name: "Dr. Ayesha Malik",
-      image: "/images/doctors/doctor3.jpg",
-      specialty: "Dermatologist",
-      location: "Karachi",
-      hospital: "Skin & Wellness Clinic",
-      experience: "8 years",
-      rating: 4.7,
-      reviews: 98,
-      nextAvailable: "2023-07-14",
-      availableTimeSlots: ["09:30 AM", "12:00 PM", "02:30 PM", "04:00 PM"],
-      about:
-        "Dr. Ayesha Malik is a skilled dermatologist specializing in medical and cosmetic dermatology. She provides comprehensive care for various skin conditions including acne, eczema, and psoriasis.",
-      education:
-        "MBBS from Dow Medical College, Diploma in Dermatology from London School of Hygiene & Tropical Medicine",
-      consultationFee: 2500,
-    },
-    {
-      id: 4,
-      name: "Dr. Imran Hussain",
-      image: "/images/doctors/doctor4.jpg",
-      specialty: "Orthopedic Surgeon",
-      location: "Islamabad",
-      hospital: "Bone & Joint Institute",
-      experience: "20 years",
-      rating: 4.9,
-      reviews: 210,
-      nextAvailable: "2023-07-19",
-      availableTimeSlots: ["08:00 AM", "10:30 AM", "01:00 PM", "03:30 PM"],
-      about:
-        "Dr. Imran Hussain is a highly experienced orthopedic surgeon specializing in joint replacement, sports injuries, and spinal disorders. He has performed over 1,000 successful surgeries.",
-      education:
-        "MBBS from Rawalpindi Medical College, MS in Orthopedic Surgery from Mayo Clinic",
-      consultationFee: 4000,
-    },
-    {
-      id: 5,
-      name: "Dr. Sana Riaz",
-      image: "/images/doctors/doctor5.jpg",
-      specialty: "Pediatrician",
-      location: "Lahore",
-      hospital: "Children's Health Center",
-      experience: "10 years",
-      rating: 4.8,
-      reviews: 175,
-      nextAvailable: "2023-07-16",
-      availableTimeSlots: ["09:00 AM", "11:00 AM", "02:00 PM", "04:00 PM"],
-      about:
-        "Dr. Sana Riaz is a compassionate pediatrician dedicated to providing quality healthcare for children from infancy through adolescence. She specializes in developmental pediatrics and childhood nutrition.",
-      education:
-        "MBBS from Fatima Jinnah Medical University, Fellowship in Pediatrics from Children's Hospital Boston",
-      consultationFee: 2000,
-    },
-    {
-      id: 6,
-      name: "Dr. Khalid Omar",
-      image: "/images/doctors/doctor6.jpg",
-      specialty: "Gastroenterologist",
-      location: "Karachi",
-      hospital: "Digestive Health Institute",
-      experience: "14 years",
-      rating: 4.6,
-      reviews: 132,
-      nextAvailable: "2023-07-18",
-      availableTimeSlots: ["10:30 AM", "01:00 PM", "03:30 PM", "05:00 PM"],
-      about:
-        "Dr. Khalid Omar is a gastroenterologist with expertise in diagnosing and treating disorders of the digestive system. He specializes in endoscopic procedures and management of inflammatory bowel diseases.",
-      education:
-        "MBBS from Aga Khan University, Fellowship in Gastroenterology from Cleveland Clinic",
-      consultationFee: 3200,
-    },
-  ];
-
   useEffect(() => {
-    // Simulating API fetch
-    setTimeout(() => {
-      setDoctors(sampleDoctors);
-      setFilteredDoctors(sampleDoctors);
-      setLoading(false);
-    }, 1000);
+    let cancelled = false;
+    async function loadDoctors() {
+      try {
+        const response = await fetch("/api/doctors");
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || "Failed to load doctors");
+        }
+        if (!cancelled) setDoctors(result.data);
+      } catch (error) {
+        console.error("Error loading doctors:", error);
+        if (!cancelled) setLoadError("Could not load doctors. Please try again later.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadDoctors();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Filter doctors based on search, specialty, and location
@@ -299,21 +202,23 @@ export default function FindDoctorPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <StarIcon
-                            key={i}
-                            className={`h-5 w-5 ${
-                              i < Math.floor(doctor.rating)
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                        <span className="ml-2 text-sm text-gray-600">
-                          ({doctor.reviews} reviews)
-                        </span>
-                      </div>
+                      {doctor.rating ? (
+                        <div className="flex items-center mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <StarIcon
+                              key={i}
+                              className={`h-5 w-5 ${
+                                i < Math.floor(doctor.rating)
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm text-gray-600">
+                            ({doctor.reviews || 0} reviews)
+                          </span>
+                        </div>
+                      ) : null}
 
                       <a
                         href={`/dashboard/patient/doctor/${doctor.id}`}
@@ -397,6 +302,7 @@ export default function FindDoctorPage() {
             </div>
           ) : (
             <div className="text-center py-8">
+              {loadError && <p className="text-red-600 mb-2">{loadError}</p>}
               <p className="text-gray-500">
                 No doctors found matching your criteria. Please try different
                 filters.

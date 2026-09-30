@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { getMedications, addMedication } from '../../../../lib/static-data';
 import { verifyToken } from '../../../../lib/jwt';
 
 export async function GET(request) {
@@ -31,7 +32,7 @@ export async function GET(request) {
     const requestedUserId = userId || authenticatedUserId;
     
     // Only allow access to own medications unless admin
-    if (authenticatedUserId !== requestedUserId && !verified.isAdmin) {
+    if (authenticatedUserId !== requestedUserId && verified.type !== 'admin') {
       return NextResponse.json(
         { error: 'Unauthorized access' },
         { status: 403 }
@@ -45,8 +46,12 @@ export async function GET(request) {
       );
     }
 
-    // Connect to database
-    const { db } = await connectToDatabase();
+    // Connect to database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ medications: getMedications(requestedUserId), fallback: true });
+    }
+    const { db } = conn;
     
     // Fetch user medications
     const medications = await db
@@ -100,8 +105,9 @@ export async function POST(request) {
       );
     }
     
-    // Connect to database
-    const { db } = await connectToDatabase();
+    // Connect to database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    const { db } = conn || {};
     
     // Create new medication object
     const newMedication = {
@@ -117,6 +123,17 @@ export async function POST(request) {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+
+    if (!db) {
+      const { createdAt, updatedAt, ...fields } = newMedication;
+      const saved = addMedication(fields);
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: 'Medication added successfully',
+        medicationId: saved._id
+      });
+    }
     
     // Insert the medication into the database
     const result = await db.collection('medications').insertOne(newMedication);

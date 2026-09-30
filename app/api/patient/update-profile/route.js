@@ -1,64 +1,31 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../lib/mongodb";
-import { verifyToken } from "../../../../lib/jwt";
+import { tryConnectToDatabase } from "../../../../lib/mongodb";
+import { updateUserProfile, updateUserHealthMetrics } from "../../../../lib/static-data";
+import { getAuthUser } from "../../../../lib/jwt";
 import { ObjectId } from "mongodb";
 
 export async function POST(request) {
   try {
-    console.log("Update profile API called");
-
-    // Verify authentication
-    const authHeader = request.headers.get("authorization");
-    console.log("Auth header present:", !!authHeader);
-
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.error("No valid auth header found");
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
+    // Verify authentication; the profile being updated is always the caller's own
+    const authUser = getAuthUser(request);
+    if (!authUser) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
 
-    const token = authHeader.split(" ")[1];
-
-    if (!token) {
-      console.error("No token found in auth header");
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      );
-    }
-
-    // Verify token validity
-    console.log("Verifying token...");
-    const verified = verifyToken(token);
-
-    if (!verified) {
-      console.error("Token verification failed");
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    console.log("Token verified, user id:", verified.id);
-
-    // Get the authenticated user's ID
-    const userId = verified.id;
+    const userId = authUser.id;
 
     // Parse the request body
     const profileData = await request.json();
-    console.log("Profile data received:", { ...profileData, userId });
 
     // Validate required fields
-    if (!profileData) {
+    if (!profileData || typeof profileData !== "object") {
       return NextResponse.json(
         { error: "Profile data is required" },
         { status: 400 }
       );
     }
 
-    // Connect to MongoDB
-    console.log("Connecting to database...");
-    const { db } = await connectToDatabase();
-    console.log("Database connection established");
+    const conn = await tryConnectToDatabase();
 
     // Clean up the profile data to remove any sensitive or unnecessary fields
     const sanitizedProfileData = {
@@ -110,158 +77,82 @@ export async function POST(request) {
       }
     }
 
-    // DEBUG: List all collections in the database
-    const collections = await db.listCollections().toArray();
-    console.log(
-      "Available collections:",
-      collections.map((c) => c.name)
-    );
-
-    // Try to convert to ObjectId if valid
-    let userObjectId = null;
-    if (ObjectId.isValid(userId)) {
-      userObjectId = new ObjectId(userId);
-      console.log("Converted userId to ObjectId:", userObjectId);
-    } else {
-      console.log("userId is not a valid ObjectId, using as string:", userId);
-    }
-
-    // DEBUG: Search for the user with the exact ID format used in the token
-    const exactIdSearch = await db
-      .collection("users")
-      .findOne({ userId: userId });
-    console.log("Search with exact userId as string:", !!exactIdSearch);
-
-    // DEBUG: Sample some users from the collection
-    const sampleUsers = await db.collection("users").find().limit(2).toArray();
-    console.log(
-      "Sample users from database:",
-      sampleUsers.map((u) => ({
-        _id: u._id,
-        userId: u.userId,
-        email: u.email,
-        keys: Object.keys(u),
-      }))
-    );
-
-    // MULTI-APPROACH USER SEARCH
-    console.log("Starting comprehensive user search...");
-
-    // Try all possible approaches to find the user
-    let mainUser = null;
-    const searchResults = {};
-
-    // Approach 1: By _id as ObjectId
-    if (userObjectId) {
-      const result = await db
-        .collection("users")
-        .findOne({ _id: userObjectId });
-      searchResults._id = !!result;
-      if (result) mainUser = result;
-      console.log("Search by _id as ObjectId:", !!result);
-    }
-
-    // Approach 2: By userId as string
-    if (!mainUser) {
-      const result = await db.collection("users").findOne({ userId: userId });
-      searchResults.userId = !!result;
-      if (result) mainUser = result;
-      console.log("Search by userId as string:", !!result);
-    }
-
-    // Approach 3: By _id as string
-    if (!mainUser) {
-      const result = await db.collection("users").findOne({ _id: userId });
-      searchResults._idAsString = !!result;
-      if (result) mainUser = result;
-      console.log("Search by _id as string:", !!result);
-    }
-
-    // Approach 4: By email if provided
-    if (!mainUser && profileData.email) {
-      const result = await db
-        .collection("users")
-        .findOne({ email: profileData.email });
-      searchResults.email = !!result;
-      if (result) mainUser = result;
-      console.log("Search by email:", !!result);
-    }
-
-    // Last resort: create mock user (only for development)
-    if (!mainUser) {
-      console.error(
-        "User not found by any method. Search results:",
-        searchResults
+    // Static fallback when MongoDB is unavailable
+    if (!conn) {
+      const nameParts = (sanitizedProfileData.name || "").trim().split(/s+/).filter(Boolean);
+      const profileUpdate = Object.fromEntries(
+        Object.entries({
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(" ") || undefined,
+          phone: sanitizedProfileData.phone,
+          dateOfBirth: sanitizedProfileData.dateOfBirth,
+          gender: sanitizedProfileData.gender,
+          bloodType: sanitizedProfileData.bloodType,
+          allergies: sanitizedProfileData.allergies,
+          medicalConditions: sanitizedProfileData.medicalConditions,
+          medications: sanitizedProfileData.medications,
+        }).filter(([, v]) => v !== undefined && v !== "")
       );
-      console.log("Creating fallback user entry.");
-
-      // Create a new user record as a fallback (only in development)
-      try {
-        const newUser = {
-          _id: userObjectId || new ObjectId(),
-          userId: userId,
-          firstName: profileData.name ? profileData.name.split(" ")[0] : "User",
-          lastName: profileData.name
-            ? profileData.name.split(" ").slice(1).join(" ")
-            : userId.substring(0, 8),
-          email:
-            profileData.email || `user_${userId.substring(0, 8)}@example.com`,
-          userType: "patient",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-
-        const insertResult = await db.collection("users").insertOne(newUser);
-        console.log("Created new user as fallback:", insertResult);
-
-        if (insertResult.acknowledged) {
-          mainUser = newUser;
-        }
-      } catch (createError) {
-        console.error("Failed to create fallback user:", createError);
-        return NextResponse.json(
-          {
-            error:
-              "User not found and could not create fallback: " +
-              createError.message,
-            searchResults: searchResults,
-          },
-          { status: 404 }
-        );
+      const staticUser = updateUserProfile(userId, profileUpdate);
+      if (!staticUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
+      const { timestamp, ...metricFields } = healthMetricsData;
+      const storedMetrics = updateUserHealthMetrics(userId, metricFields);
+      const { password, resetToken, resetTokenExpiry, ...safeUser } = staticUser;
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: "Profile updated successfully",
+        user: safeUser,
+        healthMetrics: storedMetrics.current || null,
+      });
     }
+    const { db } = conn;
 
+    // Find the user record by the identity in the token only (never by body fields)
+    const userObjectId = ObjectId.isValid(userId) ? new ObjectId(userId) : null;
+    let mainUser = null;
+    if (userObjectId) {
+      mainUser = await db.collection("users").findOne({ _id: userObjectId });
+    }
     if (!mainUser) {
-      console.error("User not found and fallback failed. userId:", userId);
-      return NextResponse.json(
-        {
-          error: "User not found after all approaches",
-          userId: userId,
-          searchResults: searchResults,
-        },
-        { status: 404 }
-      );
+      mainUser = await db.collection("users").findOne({ userId: userId });
+    }
+    if (!mainUser) {
+      mainUser = await db.collection("users").findOne({ _id: userId });
     }
 
-    console.log("Found user:", {
-      _id: mainUser._id,
-      userId: mainUser.userId,
-      name: `${mainUser.firstName || ""} ${mainUser.lastName || ""}`.trim(),
-      email: mainUser.email,
-    });
+    // Accounts from the static fallback store have no database record yet; create one
+    if (!mainUser) {
+      const newUser = {
+        _id: userObjectId || new ObjectId(),
+        userId: userId,
+        firstName: profileData.name ? profileData.name.split(" ")[0] : "User",
+        lastName: profileData.name
+          ? profileData.name.split(" ").slice(1).join(" ")
+          : "",
+        email: authUser.email,
+        userType: authUser.type || "patient",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-    // Create update operations for mainUser
-    let updateOperations = [];
+      const insertResult = await db.collection("users").insertOne(newUser);
+      if (!insertResult.acknowledged) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      mainUser = newUser;
+    }
 
-    // 1. Update main user profile in myFirstDatabase.users
+    // 1. Update main user profile
     // Update firstName and lastName if name is provided
     if (sanitizedProfileData.name) {
       const nameParts = sanitizedProfileData.name.split(" ");
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(" ");
 
-      // Direct update instead of bulkWrite for the main user
-      const mainUserUpdateResult = await db.collection("users").updateOne(
+      await db.collection("users").updateOne(
         { _id: mainUser._id },
         {
           $set: {
@@ -272,13 +163,11 @@ export async function POST(request) {
           },
         }
       );
-
-      console.log("Main user update result:", mainUserUpdateResult);
     }
 
-    // 2. Find or create user profile in medisynix.users
+    // 2. Find or create user profile in medisynix.users (used by the Personal AI Doctor)
     const medisynixDb = db.client.db("medisynix");
-    let medisynixUser = await medisynixDb
+    const medisynixUser = await medisynixDb
       .collection("users")
       .findOne({ userId: userId });
 
@@ -290,21 +179,9 @@ export async function POST(request) {
         null,
       gender: sanitizedProfileData.gender || null,
       bloodType: sanitizedProfileData.bloodType || null,
-      conditions: sanitizedProfileData.medicalConditions
-        ? typeof sanitizedProfileData.medicalConditions === "string"
-          ? [sanitizedProfileData.medicalConditions]
-          : sanitizedProfileData.medicalConditions
-        : [],
-      medications: sanitizedProfileData.medications
-        ? typeof sanitizedProfileData.medications === "string"
-          ? [sanitizedProfileData.medications]
-          : sanitizedProfileData.medications
-        : [],
-      allergies: sanitizedProfileData.allergies
-        ? typeof sanitizedProfileData.allergies === "string"
-          ? [sanitizedProfileData.allergies]
-          : sanitizedProfileData.allergies
-        : [],
+      conditions: toList(sanitizedProfileData.medicalConditions),
+      medications: toList(sanitizedProfileData.medications),
+      allergies: toList(sanitizedProfileData.allergies),
       height: healthMetricsData.height,
       weight: healthMetricsData.weight,
       bloodPressure: healthMetricsData.bloodPressure,
@@ -314,47 +191,26 @@ export async function POST(request) {
     };
 
     if (medisynixUser) {
-      console.log("Found user in medisynix.users collection");
-
-      // Direct update for medisynix user
-      const medisynixUpdateResult = await medisynixDb
+      await medisynixDb
         .collection("users")
         .updateOne({ userId: userId }, { $set: { healthData: healthData } });
-
-      console.log("Medisynix user update result:", medisynixUpdateResult);
     } else {
-      console.log("Creating new user in medisynix.users collection");
-
-      // Create new user in medisynix.users
-      const newMedisynixUser = {
+      await medisynixDb.collection("users").insertOne({
         userId: userId,
         healthData: healthData,
         chatHistory: [],
         createdAt: new Date(),
-      };
-
-      const medisynixInsertResult = await medisynixDb
-        .collection("users")
-        .insertOne(newMedisynixUser);
-      console.log(
-        "Created new user in medisynix.users:",
-        medisynixInsertResult
-      );
+      });
     }
 
     // 3. Insert health metrics in healthmetrics collection
     healthMetricsData.userId = userId;
-
-    const metricsResult = await db
-      .collection("healthmetrics")
-      .insertOne(healthMetricsData);
-    console.log("Health metrics insert result:", metricsResult);
+    await db.collection("healthmetrics").insertOne(healthMetricsData);
 
     // Get the updated user data
     const updatedUser = await db
       .collection("users")
       .findOne({ _id: mainUser._id });
-    console.log("Updated user data retrieved");
 
     // Get latest health metrics
     const latestHealthMetrics = await db
@@ -371,7 +227,6 @@ export async function POST(request) {
       delete updatedUser.resetTokenExpiry;
     }
 
-    console.log("Update profile API completed successfully");
     return NextResponse.json({
       success: true,
       message: "Profile updated successfully",
@@ -380,15 +235,18 @@ export async function POST(request) {
         latestHealthMetrics.length > 0 ? latestHealthMetrics[0] : null,
     });
   } catch (error) {
-    console.error("Error updating profile:", error);
+    console.error("Error updating profile:", error.message);
     return NextResponse.json(
-      {
-        error: "Failed to update profile: " + error.message,
-        stack: error.stack,
-      },
+      { error: "Failed to update profile" },
       { status: 500 }
     );
   }
+}
+
+// Accept either a single string or an array for list-like medical fields
+function toList(value) {
+  if (!value) return [];
+  return typeof value === "string" ? [value] : value;
 }
 
 // Helper function to calculate age from date of birth

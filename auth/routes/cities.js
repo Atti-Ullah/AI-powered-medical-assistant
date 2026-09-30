@@ -1,6 +1,7 @@
 ﻿const express = require("express");
 const router = express.Router();
 const City = require("../models/City");
+const auth = require("../middleware/auth");
 
 // @route GET api/cities
 // @desc Get all cities
@@ -18,7 +19,7 @@ router.get("/", async (req, res) => {
 // @route POST api/cities
 // @desc Add single city
 // @access Private
-router.post("/", async (req, res) => {
+router.post("/", auth, async (req, res) => {
   try {
     const city = new City(req.body);
     await city.save();
@@ -33,7 +34,7 @@ router.post("/", async (req, res) => {
 // @route REMOVE api/cities/remove/:id
 // @desc Remove single city
 // @access Private
-router.delete("/remove/:id", async (req, res) => {
+router.delete("/remove/:id", auth, async (req, res) => {
   try {
     const city = await City.findById(req.params.id);
 

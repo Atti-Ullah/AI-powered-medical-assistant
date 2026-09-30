@@ -101,7 +101,8 @@ export default function AnalyticsPage() {
         let healthData = null;
 
         const healthResponse = await fetch(
-          `/api/patient/get-health-metrics?userId=${userId}`
+          `/api/patient/get-health-metrics?userId=${userId}`,
+          { headers: { Authorization: `Bearer ${userData.token || user?.token}` } }
         );
         if (healthResponse.ok) {
           const responseData = await healthResponse.json();
@@ -109,7 +110,8 @@ export default function AnalyticsPage() {
         }
 
         const appointmentsResponse = await fetch(
-          `/api/patient/appointments?userId=${userId}`
+          `/api/patient/appointments?userId=${userId}`,
+          { headers: { Authorization: `Bearer ${userData.token || user?.token}` } }
         );
         let appointmentsData = [];
         if (appointmentsResponse.ok) {

@@ -1,35 +1,21 @@
 import { NextResponse } from 'next/server';
-import '../../../../lib/slowbuffer-patch';
-import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { findMedicalRecord, updateMedicalRecord } from '../../../../lib/static-data';
+import { getAuthUser } from '../../../../lib/jwt';
 
 export async function PUT(request) {
   try {
-    // Extract the authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Verify the login token; records always belong to the authenticated user
+    const authUser = getAuthUser(request);
+    if (!authUser) {
       return NextResponse.json(
-        { error: 'Unauthorized: No token provided' },
+        { error: 'Unauthorized: missing or invalid token' },
         { status: 401 }
       );
     }
 
-    // Extract and verify the token
-    const token = authHeader.split(' ')[1];
-    const jwtSecret = process.env.JWT_SECRET || 'development_secret_key';
-    
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret);
-    } catch (err) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Invalid token' },
-        { status: 401 }
-      );
-    }
-
-    const userId = decoded.userId;
+    const userId = authUser.id;
     
     // Parse the request body
     const { recordId, updatedData } = await request.json();
@@ -48,8 +34,29 @@ export async function PUT(request) {
       );
     }
     
-    // Connect to the database
-    const { db } = await connectToDatabase();
+    // Connect to the database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      const existing = findMedicalRecord(String(recordId));
+      if (!existing) {
+        return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+      }
+      if (existing.userId !== userId) {
+        return NextResponse.json(
+          { error: 'You do not have permission to update this record' },
+          { status: 403 }
+        );
+      }
+      const { _id, userId: _owner, createdAt, ...changes } = updatedData;
+      const record = updateMedicalRecord(existing._id, changes);
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: 'Record updated successfully',
+        record
+      });
+    }
+    const { db } = conn;
     
     // Verify the record exists and belongs to the user
     let objectId;
