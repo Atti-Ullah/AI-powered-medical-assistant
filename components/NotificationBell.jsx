@@ -29,8 +29,15 @@ function iconFor(item) {
 
 // Bell + dropdown in the dashboard top bar. Administrators see live platform notifications;
 // other roles get an empty state until they have notification sources of their own.
+// Notification sources by role; patients have none yet
+const ENDPOINTS = {
+  admin: { url: "/api/admin/notifications", footer: { href: "/dashboard/admin/alerts", label: "View all system alerts" } },
+  doctor: { url: "/api/doctor/notifications", footer: { href: "/dashboard/doctor/consultations", label: "Open consultations" } },
+};
+
 export default function NotificationBell({ user }) {
-  const isAdmin = user?.type === "admin";
+  const source = ENDPOINTS[user?.type];
+  const hasSource = !!source;
   const storageKey = `medisynix_read_notifications_${user?.id}`;
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState([]);
@@ -61,10 +68,10 @@ export default function NotificationBell({ user }) {
   );
 
   const load = useCallback(async () => {
-    if (!isAdmin || !user?.token) return;
+    if (!hasSource || !user?.token) return;
     setLoading(true);
     try {
-      const result = await adminRequest(user.token, "/api/admin/notifications");
+      const result = await adminRequest(user.token, source.url);
       setItems(result.data);
       setError("");
     } catch (err) {
@@ -72,14 +79,14 @@ export default function NotificationBell({ user }) {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, user?.token]);
+  }, [hasSource, source?.url, user?.token]);
 
   useEffect(() => {
     load();
-    if (!isAdmin) return undefined;
+    if (!hasSource) return undefined;
     const timer = setInterval(load, POLL_MS);
     return () => clearInterval(timer);
-  }, [load, isAdmin]);
+  }, [load, hasSource]);
 
   // Close on outside click or Escape
   useEffect(() => {
@@ -200,14 +207,14 @@ export default function NotificationBell({ user }) {
             )}
           </div>
 
-          {isAdmin && (
+          {hasSource && (
             <div className="border-t border-slate-100 bg-slate-50/60 px-4 py-2.5 text-center">
               <Link
-                href="/dashboard/admin/alerts"
+                href={source.footer.href}
                 onClick={() => setOpen(false)}
                 className="text-xs font-medium text-primary-600 hover:text-primary-700"
               >
-                View all system alerts &rarr;
+                {source.footer.label} &rarr;
               </Link>
             </div>
           )}

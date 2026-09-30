@@ -1,7 +1,7 @@
 // Shared page heading for the admin area so every page opens the same way
-export default function AdminPageHeader({ eyebrow = "Administration", title, description, actions = null }) {
+export default function PageHeader({ eyebrow = "Administration", title, description, actions = null }) {
   return (
-    <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
       <div className="min-w-0">
         <p className="text-sm font-medium text-primary-600">{eyebrow}</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>

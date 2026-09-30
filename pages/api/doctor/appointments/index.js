@@ -1,0 +1,15 @@
+import { sendAdminError } from '../../../../lib/admin';
+import { requireDoctor, listAppointments } from '../../../../lib/doctor';
+
+export default async function handler(req, res) {
+  if (req.method !== 'GET') return res.status(405).json({ success: false, message: 'Method not allowed' });
+  const doctor = requireDoctor(req, res);
+  if (!doctor) return;
+  try {
+    const q = (key) => (typeof req.query[key] === 'string' ? req.query[key] : '');
+    const data = await listAppointments(doctor.id, { status: q('status'), search: q('search'), when: q('when') });
+    return res.status(200).json({ success: true, count: data.length, data });
+  } catch (error) {
+    return sendAdminError(res, error);
+  }
+}

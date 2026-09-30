@@ -10,7 +10,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../components/DashboardLayout";
-import AdminPageHeader from "../../../../components/AdminPageHeader";
+import PageHeader from "../../../../components/PageHeader";
 import { adminRequest, downloadFile, toCsv } from "../../../../lib/admin-client";
 
 export default function AdminReportsPage() {
@@ -79,7 +79,7 @@ export default function AdminReportsPage() {
 
   return (
     <DashboardLayout>
-      <AdminPageHeader title="Reports" description="Generate and download platform reports" />
+      <PageHeader title="Reports" description="Generate and download platform reports" />
 
       {message && (
         <div role="status" className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">

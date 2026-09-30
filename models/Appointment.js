@@ -40,6 +40,13 @@ const AppointmentSchema = new mongoose.Schema({
   notes: {
     type: String
   },
+  // Filled in by the doctor when the consultation is completed
+  diagnosis: {
+    type: String
+  },
+  doctorNotes: {
+    type: String
+  },
   createdAt: {
     type: Date,
     default: Date.now

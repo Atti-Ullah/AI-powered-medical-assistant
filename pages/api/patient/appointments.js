@@ -8,6 +8,8 @@ import {
   getAllAppointments,
 } from '../../../lib/static-data';
 import { getAuthUser, canAccessUser } from '../../../lib/jwt';
+import { assertSlotBookable } from '../../../lib/doctor';
+import { sendAdminError, AdminError } from '../../../lib/admin';
 
 export default async function handler(req, res) {
   const authUser = getAuthUser(req);
@@ -96,6 +98,15 @@ async function createNewAppointment(req, res) {
     return res.status(403).json({ success: false, message: 'Not allowed to book for another patient' });
   }
 
+  // Bookings with a doctor must use a slot that doctor offers and that nobody else holds
+  if (appointmentData.doctorId) {
+    try {
+      await assertSlotBookable(String(appointmentData.doctorId), appointmentData.date, appointmentData.time);
+    } catch (error) {
+      return sendAdminError(res, error);
+    }
+  }
+
   try {
     await dbConnect();
 
@@ -135,6 +146,17 @@ async function createNewAppointment(req, res) {
   }
 }
 
+// A date/time change must land on a slot the doctor offers that nobody else holds
+async function checkReschedule(existing, updatedData) {
+  if (!existing.doctorId || (updatedData.date === undefined && updatedData.time === undefined)) return;
+  await assertSlotBookable(
+    String(existing.doctorId),
+    updatedData.date || existing.date,
+    updatedData.time || existing.time,
+    String(existing.id || existing._id)
+  );
+}
+
 // Update an existing appointment
 async function updateExistingAppointment(req, res) {
   const { appointmentId, date, time, status, reason, notes } = req.body || {};
@@ -160,6 +182,7 @@ async function updateExistingAppointment(req, res) {
       return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
     }
 
+    await checkReschedule(existing, updatedData);
     updatedData.updatedAt = new Date();
 
     const updatedAppointment = await Appointment.findByIdAndUpdate(
@@ -177,6 +200,7 @@ async function updateExistingAppointment(req, res) {
       data: updatedAppointment
     });
   } catch (error) {
+    if (error instanceof AdminError) return sendAdminError(res, error);
     console.error('DB appointment update unavailable, using static fallback:', error.message);
 
     // Static demo fallback (works without a live MongoDB connection)
@@ -188,6 +212,11 @@ async function updateExistingAppointment(req, res) {
       return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
     }
 
+    try {
+      await checkReschedule(existing, updatedData);
+    } catch (validationError) {
+      return sendAdminError(res, validationError);
+    }
     const updated = updateStaticAppointment(appointmentId, updatedData);
     return res.status(200).json({
       success: true,

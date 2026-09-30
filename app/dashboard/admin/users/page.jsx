@@ -13,7 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../components/DashboardLayout";
-import AdminPageHeader from "../../../../components/AdminPageHeader";
+import PageHeader from "../../../../components/PageHeader";
 import { adminRequest } from "../../../../lib/admin-client";
 
 const EMPTY_FORM = {
@@ -124,7 +124,7 @@ export default function AdminUsersPage() {
 
   return (
     <DashboardLayout>
-      <AdminPageHeader
+      <PageHeader
         title="User Management"
         description="View, create, edit and remove platform accounts"
         actions={

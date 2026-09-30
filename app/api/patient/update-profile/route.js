@@ -79,7 +79,7 @@ export async function POST(request) {
 
     // Static fallback when MongoDB is unavailable
     if (!conn) {
-      const nameParts = (sanitizedProfileData.name || "").trim().split(/s+/).filter(Boolean);
+      const nameParts = (sanitizedProfileData.name || "").trim().split(/\s+/).filter(Boolean);
       const profileUpdate = Object.fromEntries(
         Object.entries({
           firstName: nameParts[0],

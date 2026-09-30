@@ -24,6 +24,7 @@ import {
   ChevronDoubleLeftIcon,
   ShieldCheckIcon,
   BellAlertIcon,
+  DocumentArrowUpIcon,
 } from "@heroicons/react/24/outline";
 
 const userTypeNavigation = {
@@ -42,6 +43,7 @@ const userTypeNavigation = {
     { name: "Patients", href: "/dashboard/doctor/patients", icon: UsersIcon },
     { name: "Consultations", href: "/dashboard/doctor/consultations", icon: ChatBubbleLeftRightIcon },
     { name: "AI Analysis", href: "/dashboard/doctor/ai-analysis", icon: SparklesIcon },
+    { name: "Upload Report", href: "/dashboard/doctor/upload-report", icon: DocumentArrowUpIcon },
     { name: "Analytics", href: "/dashboard/doctor/analytics", icon: ChartBarSquareIcon },
   ],
   admin: [

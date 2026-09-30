@@ -206,7 +206,7 @@ export default function AdminProfilePage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-medium text-primary-600">Account</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Administrator Profile</h1>

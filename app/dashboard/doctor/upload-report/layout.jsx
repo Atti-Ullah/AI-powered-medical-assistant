@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Upload Patient Report - Medisynix",
-  description: "Upload and analyze patient medical reports and images with AI",
+  title: "Upload Report - Medisynix",
+  description: "Add lab and imaging reports to a patient's medical records",
 };
 
 export default function UploadReportLayout({ children }) {

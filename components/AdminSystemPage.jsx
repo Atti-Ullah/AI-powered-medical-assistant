@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ArrowPathIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLayout from "./DashboardLayout";
-import AdminPageHeader from "./AdminPageHeader";
+import PageHeader from "./PageHeader";
 import { adminRequest } from "../lib/admin-client";
 
 // Shared shell for the admin pages that render from the live system status
@@ -38,7 +38,7 @@ export default function AdminSystemPage({ title, description, sections = null, c
 
   return (
     <DashboardLayout>
-      <AdminPageHeader
+      <PageHeader
         title={title}
         description={description}
         actions={

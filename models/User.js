@@ -77,6 +77,28 @@ const UserSchema = new mongoose.Schema({
   avatar: {
     type: String
   },
+  // For doctors (shown in the patient-facing doctor directory)
+  hospital: {
+    type: String
+  },
+  location: {
+    type: String
+  },
+  licenseNumber: {
+    type: String
+  },
+  about: {
+    type: String
+  },
+  languages: {
+    type: [String]
+  },
+  consultationFee: {
+    type: Number
+  },
+  availableTimeSlots: {
+    type: [String]
+  },
   // Password reset fields
   resetToken: {
     type: String

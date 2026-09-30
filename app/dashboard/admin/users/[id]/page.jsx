@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeftIcon, CheckCircleIcon, XCircleIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "../../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../../components/DashboardLayout";
-import AdminPageHeader from "../../../../../components/AdminPageHeader";
+import PageHeader from "../../../../../components/PageHeader";
 import { adminRequest } from "../../../../../lib/admin-client";
 
 const inputClass =
@@ -126,7 +126,7 @@ export default function AdminUserDetailPage() {
         </div>
       ) : (
         <>
-          <AdminPageHeader
+          <PageHeader
             eyebrow="User profile"
             title={account.name}
             description={`Joined ${account.date || "unknown"} · ID ${account.id}`}

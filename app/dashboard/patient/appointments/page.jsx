@@ -12,6 +12,24 @@ import {
   ExclamationCircleIcon,
 } from "@heroicons/react/24/outline";
 
+// Options for a time <select>: the doctor's slots for the chosen date, with taken ones disabled
+function TimeOptions({ slots, ready }) {
+  if (!ready) return <option value="">Choose a doctor and date first</option>;
+  if (slots === null) return <option value="">Loading times...</option>;
+  if (slots.length === 0) return <option value="">No times available</option>;
+  return (
+    <>
+      <option value="">Select a time</option>
+      {slots.map((slot) => (
+        <option key={slot.time} value={slot.time} disabled={!slot.available}>
+          {slot.time}
+          {slot.available ? "" : " (booked)"}
+        </option>
+      ))}
+    </>
+  );
+}
+
 export default function AppointmentsPage() {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -33,6 +51,8 @@ export default function AppointmentsPage() {
   });
 
   const [doctors, setDoctors] = useState([]);
+  const [bookingSlots, setBookingSlots] = useState(null);
+  const [rescheduleSlots, setRescheduleSlots] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
 
   // Normalise API records (MongoDB uses _id / doctorName, the static store uses id)
@@ -143,6 +163,40 @@ export default function AppointmentsPage() {
     fetchAppointments();
   }, [user]);
 
+  // Load the doctor's free slots whenever the doctor and date change (booking form)
+  useEffect(() => {
+    if (!user?.token || !formData.doctorId || !formData.date) return undefined;
+    let cancelled = false;
+    setBookingSlots(null);
+    fetch(`/api/doctors/${formData.doctorId}/availability?date=${formData.date}`, { headers: { Authorization: `Bearer ${user.token}` } })
+      .then((res) => res.json())
+      .then((result) => {
+        if (cancelled) return;
+        const slots = result.success ? result.data.slots : [];
+        setBookingSlots(slots);
+        // Drop a previously chosen time that is not free on the new date
+        setFormData((prev) => (slots.some((sl) => sl.time === prev.time && sl.available) ? prev : { ...prev, time: "" }));
+      })
+      .catch(() => !cancelled && setBookingSlots([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.token, formData.doctorId, formData.date]);
+
+  // Same for the reschedule dialog (the appointment's own slot counts as free)
+  useEffect(() => {
+    if (!user?.token || !showRescheduleModal || !selectedAppointment?.doctorId || !rescheduleData.date) return undefined;
+    let cancelled = false;
+    setRescheduleSlots(null);
+    fetch(`/api/doctors/${selectedAppointment.doctorId}/availability?date=${rescheduleData.date}&exclude=${selectedAppointment.id}`, { headers: { Authorization: `Bearer ${user.token}` } })
+      .then((res) => res.json())
+      .then((result) => !cancelled && setRescheduleSlots(result.success ? result.data.slots : []))
+      .catch(() => !cancelled && setRescheduleSlots([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.token, showRescheduleModal, selectedAppointment, rescheduleData.date]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -201,7 +255,8 @@ export default function AppointmentsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to book appointment. Please try again.");
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.message || "Failed to book appointment. Please try again.");
       }
 
       const { data } = await response.json();
@@ -311,7 +366,8 @@ export default function AppointmentsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to reschedule appointment");
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.message || "Failed to reschedule appointment");
       }
 
       const { data } = await response.json();
@@ -331,7 +387,7 @@ export default function AppointmentsPage() {
       setShowRescheduleModal(false);
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
-      setErrorMessage("Failed to reschedule the appointment. Please try again.");
+      setErrorMessage(error.message || "Failed to reschedule the appointment. Please try again.");
       setShowRescheduleModal(false);
     } finally {
       setLoading(false);
@@ -425,16 +481,7 @@ export default function AppointmentsPage() {
                       required
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
-                      <option value="">Select a time</option>
-                      <option value="09:00 AM">09:00 AM</option>
-                      <option value="10:00 AM">10:00 AM</option>
-                      <option value="11:00 AM">11:00 AM</option>
-                      <option value="12:00 PM">12:00 PM</option>
-                      <option value="01:00 PM">01:00 PM</option>
-                      <option value="02:00 PM">02:00 PM</option>
-                      <option value="03:00 PM">03:00 PM</option>
-                      <option value="04:00 PM">04:00 PM</option>
-                      <option value="05:00 PM">05:00 PM</option>
+                      <TimeOptions slots={bookingSlots} ready={!!(formData.doctorId && formData.date)} />
                     </select>
                   </div>
 
@@ -668,16 +715,7 @@ export default function AppointmentsPage() {
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   >
-                    <option value="">Select a time</option>
-                    <option value="09:00 AM">09:00 AM</option>
-                    <option value="10:00 AM">10:00 AM</option>
-                    <option value="11:00 AM">11:00 AM</option>
-                    <option value="12:00 PM">12:00 PM</option>
-                    <option value="01:00 PM">01:00 PM</option>
-                    <option value="02:00 PM">02:00 PM</option>
-                    <option value="03:00 PM">03:00 PM</option>
-                    <option value="04:00 PM">04:00 PM</option>
-                    <option value="05:00 PM">05:00 PM</option>
+                    <TimeOptions slots={rescheduleSlots} ready={!!(selectedAppointment?.doctorId && rescheduleData.date)} />
                   </select>
                 </div>
               </div>
