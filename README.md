@@ -10,6 +10,7 @@ The platform combines a modern web application architecture with an AI chatbot p
 
 ## 🚀 Key Features
 
+
 ### 🤖 AI Medical Assistant
 
 Medisynix provides an interactive AI chatbot that allows users to ask healthcare-related questions and receive informational responses.
