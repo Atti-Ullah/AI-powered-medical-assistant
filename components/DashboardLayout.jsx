@@ -22,7 +22,6 @@ import {
   Cog6ToothIcon,
   ArrowRightStartOnRectangleIcon,
   ChevronDoubleLeftIcon,
-  ChevronDoubleRightIcon,
   ShieldCheckIcon,
   BellAlertIcon,
 } from "@heroicons/react/24/outline";
@@ -62,14 +61,17 @@ const ShellContext = createContext(false);
 const ROLE_LABELS = { patient: "Patient", doctor: "Doctor", admin: "Administrator" };
 const STORAGE_KEY = "medisynix_sidebar_collapsed";
 
+// The full logo and the cross mark cross-fade while the box around them changes width,
+// so collapsing never swaps content abruptly.
 function BrandMark({ collapsed }) {
   return (
-    <span className="flex items-center">
-      {collapsed ? (
-        <LogoMark className="h-9 w-9" variant="light" />
-      ) : (
+    <span className={`relative block h-9 overflow-hidden transition-all duration-300 ease-in-out motion-reduce:transition-none ${collapsed ? "w-9" : "w-[148px]"}`}>
+      <span className={`absolute left-0 top-0 transition-all duration-300 ease-in-out motion-reduce:transition-none ${collapsed ? "opacity-0" : "opacity-100"}`}>
         <Logo className="h-9" variant="light" />
-      )}
+      </span>
+      <span className={`absolute left-0 top-0 transition-all duration-300 ease-in-out motion-reduce:transition-none ${collapsed ? "opacity-100" : "opacity-0"}`} aria-hidden="true">
+        <LogoMark className="h-9 w-9" variant="light" />
+      </span>
     </span>
   );
 }
@@ -135,14 +137,19 @@ function DashboardShell({ children }) {
   const lastSegment = pathname.split("/").filter(Boolean).pop() || "";
   const pageTitle =
     activeItem?.name ||
-    (lastSegment && lastSegment !== userType ? lastSegment.replace(/-/g, " ").replace(/w/g, (c) => c.toUpperCase()) : "Dashboard");
+    (lastSegment && lastSegment !== userType ? lastSegment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Dashboard");
   const displayName = user.name || ROLE_LABELS[userType] || "User";
 
   const renderNav = (isCollapsed) => (
-    <nav className="flex flex-1 flex-col px-3 py-4" aria-label="Main navigation">
-      {!isCollapsed && (
-        <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Menu</p>
-      )}
+    <nav className="flex flex-1 flex-col overflow-hidden px-3.5 py-4" aria-label="Main navigation">
+      <p
+        className={`overflow-hidden whitespace-nowrap px-3.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+          isCollapsed ? "mb-0 max-h-0 opacity-0" : "mb-2 max-h-5 opacity-100"
+        }`}
+        aria-hidden={isCollapsed}
+      >
+        Menu
+      </p>
       <ul className="space-y-1">
         {navigation.map((item) => {
           const active = isActive(item.href);
@@ -152,9 +159,7 @@ function DashboardShell({ children }) {
                 href={item.href}
                 title={isCollapsed ? item.name : undefined}
                 aria-current={active ? "page" : undefined}
-                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isCollapsed ? "justify-center" : ""
-                } ${
+                className={`group relative flex items-center rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors duration-200 ${
                   active
                     ? "bg-primary-600 text-white shadow-md shadow-primary-900/30"
                     : "text-slate-300 hover:bg-white/5 hover:text-white"
@@ -164,7 +169,13 @@ function DashboardShell({ children }) {
                   className={`h-5 w-5 shrink-0 ${active ? "text-white" : "text-slate-400 group-hover:text-white"}`}
                   aria-hidden="true"
                 />
-                {isCollapsed ? <span className="sr-only">{item.name}</span> : <span className="truncate">{item.name}</span>}
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+                    isCollapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-[11rem] opacity-100"
+                  }`}
+                >
+                  {item.name}
+                </span>
               </Link>
             </li>
           );
@@ -176,12 +187,16 @@ function DashboardShell({ children }) {
           type="button"
           onClick={logout}
           title={isCollapsed ? "Logout" : undefined}
-          className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:bg-red-500/10 hover:text-red-300 ${
-            isCollapsed ? "justify-center" : ""
-          }`}
+          className="group flex w-full items-center rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-300 transition-colors duration-200 hover:bg-red-500/10 hover:text-red-300"
         >
           <ArrowRightStartOnRectangleIcon className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-red-300" aria-hidden="true" />
-          {isCollapsed ? <span className="sr-only">Logout</span> : "Logout"}
+          <span
+            className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+              isCollapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-[11rem] opacity-100"
+            }`}
+          >
+            Logout
+          </span>
         </button>
       </div>
     </nav>
@@ -221,7 +236,7 @@ function DashboardShell({ children }) {
           collapsed ? "w-[76px]" : "w-64"
         }`}
       >
-        <div className={`flex h-16 shrink-0 items-center border-b border-white/10 ${collapsed ? "justify-center px-2" : "px-5"}`}>
+        <div className="flex h-16 shrink-0 items-center overflow-hidden border-b border-white/10 px-5">
           <Link href={dashboardPrefix} aria-label="Medisynix home">
             <BrandMark collapsed={collapsed} />
           </Link>
@@ -249,11 +264,10 @@ function DashboardShell({ children }) {
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className="hidden rounded-lg border border-slate-200 p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:inline-flex"
           >
-            {collapsed ? (
-              <ChevronDoubleRightIcon className="h-4 w-4" aria-hidden="true" />
-            ) : (
-              <ChevronDoubleLeftIcon className="h-4 w-4" aria-hidden="true" />
-            )}
+            <ChevronDoubleLeftIcon
+              className={`h-4 w-4 transition-all duration-300 ease-in-out motion-reduce:transition-none ${collapsed ? "rotate-180" : "rotate-0"}`}
+              aria-hidden="true"
+            />
           </button>
 
           <div className="min-w-0 flex-1">
