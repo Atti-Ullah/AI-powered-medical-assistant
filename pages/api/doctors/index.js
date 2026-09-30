@@ -1,4 +1,4 @@
-import { getAllDoctors } from '../../../lib/static-data';
+import { getDoctorDirectory } from '../../../lib/static-data';
 
 export default function handler(req, res) {
   if (req.method !== 'GET') {
@@ -6,21 +6,13 @@ export default function handler(req, res) {
   }
 
   try {
-    // Get all doctors from static data
-    const doctors = getAllDoctors();
-    
-    // Return list of doctors without sensitive data
+    // Single source of truth for the doctor lists shown across the patient dashboard
+    const doctors = getDoctorDirectory();
+
     return res.status(200).json({
       success: true,
       count: doctors.length,
-      data: doctors.map(doctor => ({
-        id: doctor.id,
-        name: `${doctor.firstName} ${doctor.lastName}`,
-        email: doctor.email,
-        specialty: doctor.specialty,
-        experience: doctor.experience,
-        education: doctor.education
-      }))
+      data: doctors
     });
   } catch (error) {
     console.error('Error fetching doctors:', error);
@@ -29,4 +21,4 @@ export default function handler(req, res) {
       message: 'Failed to fetch doctors'
     });
   }
-} 
+}

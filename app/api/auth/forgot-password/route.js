@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { setPasswordResetToken } from '../../../../lib/static-data';
 
 export async function POST(request) {
   try {
@@ -22,9 +23,26 @@ export async function POST(request) {
       );
     }
     
-    // Connect to MongoDB
-    const { db } = await connectToDatabase();
-    
+    // Connect to MongoDB (static fallback when unavailable)
+    const conn = await tryConnectToDatabase();
+    const db = conn?.db;
+
+    const respond = () => NextResponse.json({
+      success: true,
+      message: 'If your email is registered, you will receive a password reset link'
+    });
+
+    if (!db) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const hashed = crypto.createHash('sha256').update(token).digest('hex');
+      const staticUser = setPasswordResetToken(email, userType, hashed, Date.now() + 3600000);
+      if (staticUser && process.env.NODE_ENV !== 'production') {
+        const link = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/reset-password?token=${token}&email=${encodeURIComponent(staticUser.email)}`;
+        console.log('Password reset link (development only):', link);
+      }
+      return respond();
+    }
+
     // Find user by email in database
     const user = await db.collection('users').findOne({ 
       email: email,

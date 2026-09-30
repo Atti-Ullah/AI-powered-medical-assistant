@@ -32,14 +32,54 @@ export default function AppointmentsPage() {
     time: "",
   });
 
-  // Sample data for demo purposes
-  const sampleDoctors = [
-    { id: 1, name: "Dr. Sarah Ahmed", specialty: "General Physician" },
-    { id: 2, name: "Dr. Khalid Khan", specialty: "Cardiologist" },
-    { id: 3, name: "Dr. Ayesha Malik", specialty: "Dermatologist" },
-    { id: 4, name: "Dr. Imran Ali", specialty: "Pediatrician" },
-    { id: 5, name: "Dr. Fatima Zaidi", specialty: "Neurologist" },
-  ];
+  const [doctors, setDoctors] = useState([]);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Normalise API records (MongoDB uses _id / doctorName, the static store uses id)
+  const normalizeAppointment = (appt) => ({
+    ...appt,
+    id: appt.id || appt._id,
+    doctor: appt.doctor || appt.doctorName,
+    specialty: appt.specialty || appt.doctorSpecialty,
+  });
+
+  // A booking is "past" once it is completed or its date has gone by
+  const getAppointmentTab = (appt) => {
+    if (appt.status === "cancelled") return "cancelled";
+    if (appt.status === "completed") return "past";
+    const today = new Date().toISOString().split("T")[0];
+    return appt.date && appt.date < today ? "past" : "upcoming";
+  };
+
+  // Load the doctor list (shared with Find a Doctor) and pre-fill the form from the URL
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDoctors() {
+      try {
+        const response = await fetch("/api/doctors");
+        const result = await response.json();
+        if (!cancelled && result.success) setDoctors(result.data);
+      } catch (error) {
+        console.error("Error loading doctors:", error);
+      }
+    }
+    loadDoctors();
+
+    const params = new URLSearchParams(window.location.search);
+    const doctorId = params.get("doctor");
+    if (doctorId) {
+      setFormData((prev) => ({
+        ...prev,
+        doctorId,
+        date: params.get("date") || prev.date,
+        time: params.get("time") || prev.time,
+      }));
+      setShowBookingForm(true);
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     // Load appointments from API
@@ -58,7 +98,7 @@ export default function AppointmentsPage() {
 
           if (response.ok) {
             const { data } = await response.json();
-            setAppointments(data || []);
+            setAppointments((data || []).map(normalizeAppointment));
           } else {
             // Fallback to localStorage if API call fails
             let userData = user;
@@ -125,9 +165,13 @@ export default function AppointmentsPage() {
 
     try {
       // Get doctor details
-      const selectedDoctor = sampleDoctors.find(
-        (doc) => doc.id === parseInt(formData.doctorId)
+      const selectedDoctor = doctors.find(
+        (doc) => String(doc.id) === String(formData.doctorId)
       );
+      if (!selectedDoctor) {
+        throw new Error("Please select a doctor");
+      }
+      setErrorMessage("");
 
       // Get the MongoDB ID (could be in _id or id field)
       const userId = user._id || user.id;
@@ -136,6 +180,7 @@ export default function AppointmentsPage() {
       const appointmentData = {
         patientId: userId,
         patientName: user.name,
+        doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
         doctorSpecialty: selectedDoctor.specialty,
         date: formData.date,
@@ -156,10 +201,11 @@ export default function AppointmentsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to book appointment");
+        throw new Error("Failed to book appointment. Please try again.");
       }
 
-      const { data: newAppointment } = await response.json();
+      const { data } = await response.json();
+      const newAppointment = normalizeAppointment(data);
 
       // Update local state
       setAppointments((prev) => [...prev, newAppointment]);
@@ -178,7 +224,7 @@ export default function AppointmentsPage() {
       });
     } catch (error) {
       console.error("Error booking appointment:", error);
-      // Handle error (show message to user)
+      setErrorMessage(error.message || "Failed to book appointment.");
     } finally {
       setLoading(false);
     }
@@ -220,7 +266,8 @@ export default function AppointmentsPage() {
         throw new Error("Failed to cancel appointment");
       }
 
-      const { data: updatedAppointment } = await response.json();
+      const { data } = await response.json();
+      const updatedAppointment = normalizeAppointment(data);
 
       // Update local state
       const updatedAppointments = appointments.map((app) =>
@@ -232,10 +279,12 @@ export default function AppointmentsPage() {
       // Also update in user profile for backward compatibility
       updateProfile({ appointments: updatedAppointments });
 
+      setErrorMessage("");
       setShowCancelModal(false);
     } catch (error) {
       console.error("Error cancelling appointment:", error);
-      // Handle error (show message to user)
+      setErrorMessage("Failed to cancel the appointment. Please try again.");
+      setShowCancelModal(false);
     } finally {
       setLoading(false);
     }
@@ -265,7 +314,8 @@ export default function AppointmentsPage() {
         throw new Error("Failed to reschedule appointment");
       }
 
-      const { data: updatedAppointment } = await response.json();
+      const { data } = await response.json();
+      const updatedAppointment = normalizeAppointment(data);
 
       // Update local state
       const updatedAppointments = appointments.map((app) =>
@@ -277,10 +327,12 @@ export default function AppointmentsPage() {
       // Also update in user profile for backward compatibility
       updateProfile({ appointments: updatedAppointments });
 
+      setErrorMessage("");
       setShowRescheduleModal(false);
     } catch (error) {
       console.error("Error rescheduling appointment:", error);
-      // Handle error (show message to user)
+      setErrorMessage("Failed to reschedule the appointment. Please try again.");
+      setShowRescheduleModal(false);
     } finally {
       setLoading(false);
     }
@@ -288,7 +340,7 @@ export default function AppointmentsPage() {
 
   // Filter appointments based on active tab
   const filteredAppointments = appointments.filter(
-    (appointment) => appointment.status === activeTab
+    (appointment) => getAppointmentTab(appointment) === activeTab
   );
 
   if (!user) {
@@ -311,6 +363,15 @@ export default function AppointmentsPage() {
             </button>
           </div>
 
+          {errorMessage && (
+            <div
+              role="alert"
+              className="mx-6 mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+            >
+              {errorMessage}
+            </div>
+          )}
+
           {showBookingForm ? (
             <div className="p-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -330,7 +391,7 @@ export default function AppointmentsPage() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     >
                       <option value="">Select a doctor</option>
-                      {sampleDoctors.map((doctor) => (
+                      {doctors.map((doctor) => (
                         <option key={doctor.id} value={doctor.id}>
                           {doctor.name} - {doctor.specialty}
                         </option>

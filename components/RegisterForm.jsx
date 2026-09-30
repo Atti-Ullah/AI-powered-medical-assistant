@@ -279,27 +279,10 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      <div>
-        <label
-          htmlFor="userType"
-          className="block text-sm font-medium text-gray-700"
-        >
-          I am a
-        </label>
-        <div className="mt-1">
-          <select
-            id="userType"
-            name="userType"
-            className="block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6"
-            value={formData.userType}
-            onChange={handleChange}
-          >
-            <option value="patient">User</option>
-            <option value="doctor">Doctor</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-      </div>
+      <p className="text-sm text-gray-600">
+        You are registering as a patient. Doctor and administrator accounts are
+        created by the Medisynix admin team.
+      </p>
 
       <div className="flex items-center">
         <input

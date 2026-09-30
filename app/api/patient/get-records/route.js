@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { getMedicalRecords } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
 
 // GET endpoint to fetch a user's medical records
@@ -17,8 +18,8 @@ export async function GET(request) {
 
     const userId = authUser.id;
     
-    // Connect to the database
-    const { db } = await connectToDatabase();
+    // Connect to the database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
     
     // Parse query parameters
     const { searchParams } = new URL(request.url);
@@ -28,6 +29,27 @@ export async function GET(request) {
     const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10', 10) || 10));
     const skip = (page - 1) * limit;
     
+    if (!conn) {
+      const term = searchTerm.slice(0, 100).toLowerCase();
+      const all = getMedicalRecords(userId).filter((rec) =>
+        (!recordType || rec.type === recordType) &&
+        (!term ||
+          [rec.title, rec.doctor, rec.findings].some((v) => (v || '').toLowerCase().includes(term)))
+      );
+      const totalPages = Math.ceil(all.length / limit);
+      return NextResponse.json({
+        records: all.slice(skip, skip + limit),
+        fallback: true,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalRecords: all.length,
+          hasMore: page < totalPages
+        }
+      });
+    }
+    const { db } = conn;
+
     // Build the query
     const query = { userId: userId };
     

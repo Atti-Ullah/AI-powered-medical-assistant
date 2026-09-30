@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { connectToDatabase } from "../../../../lib/mongodb";
+import { tryConnectToDatabase } from "../../../../lib/mongodb";
+import { updateUserProfile, updateUserHealthMetrics } from "../../../../lib/static-data";
 import { getAuthUser } from "../../../../lib/jwt";
 import { ObjectId } from "mongodb";
 
@@ -24,7 +25,7 @@ export async function POST(request) {
       );
     }
 
-    const { db } = await connectToDatabase();
+    const conn = await tryConnectToDatabase();
 
     // Clean up the profile data to remove any sensitive or unnecessary fields
     const sanitizedProfileData = {
@@ -75,6 +76,39 @@ export async function POST(request) {
         healthMetricsData.bmiStatus = "Obese";
       }
     }
+
+    // Static fallback when MongoDB is unavailable
+    if (!conn) {
+      const nameParts = (sanitizedProfileData.name || "").trim().split(/s+/).filter(Boolean);
+      const profileUpdate = Object.fromEntries(
+        Object.entries({
+          firstName: nameParts[0],
+          lastName: nameParts.slice(1).join(" ") || undefined,
+          phone: sanitizedProfileData.phone,
+          dateOfBirth: sanitizedProfileData.dateOfBirth,
+          gender: sanitizedProfileData.gender,
+          bloodType: sanitizedProfileData.bloodType,
+          allergies: sanitizedProfileData.allergies,
+          medicalConditions: sanitizedProfileData.medicalConditions,
+          medications: sanitizedProfileData.medications,
+        }).filter(([, v]) => v !== undefined && v !== "")
+      );
+      const staticUser = updateUserProfile(userId, profileUpdate);
+      if (!staticUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+      const { timestamp, ...metricFields } = healthMetricsData;
+      const storedMetrics = updateUserHealthMetrics(userId, metricFields);
+      const { password, resetToken, resetTokenExpiry, ...safeUser } = staticUser;
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: "Profile updated successfully",
+        user: safeUser,
+        healthMetrics: storedMetrics.current || null,
+      });
+    }
+    const { db } = conn;
 
     // Find the user record by the identity in the token only (never by body fields)
     const userObjectId = ObjectId.isValid(userId) ? new ObjectId(userId) : null;

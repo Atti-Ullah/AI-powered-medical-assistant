@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { addMedicalRecord } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
 
 export async function POST(request) {
@@ -27,8 +28,8 @@ export async function POST(request) {
       );
     }
     
-    // Connect to the database
-    const { db } = await connectToDatabase();
+    // Connect to the database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
     
     // Create record object
     const record = {
@@ -44,6 +45,18 @@ export async function POST(request) {
       updatedAt: new Date()
     };
     
+    if (!conn) {
+      const { createdAt, updatedAt, ...fields } = record;
+      const saved = addMedicalRecord(fields);
+      return NextResponse.json({
+        success: true,
+        fallback: true,
+        message: 'Medical record uploaded successfully',
+        recordId: saved._id
+      });
+    }
+    const { db } = conn;
+
     // Insert the record into the database
     const result = await db.collection('medical_records').insertOne(record);
     

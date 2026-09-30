@@ -1,6 +1,7 @@
 import dbConnect from '../../../lib/db';
 import HealthMetric from '../../../models/HealthMetric';
 import User from '../../../models/User';
+import { updateUserHealthMetrics, findUserById } from '../../../lib/static-data';
 import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
@@ -9,9 +10,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  try {
-    const { userId, metrics } = req.body || {};
+  const { userId, metrics } = req.body || {};
+  let safeMetrics = {};
 
+  try {
     if (!userId) {
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
@@ -26,7 +28,7 @@ export default async function handler(req, res) {
 
     // Only accept known metric fields; userId and timestamp are set by the server
     const allowed = ['height', 'weight', 'bloodPressure', 'heartRate', 'glucoseLevel', 'bmi', 'bmiStatus'];
-    const safeMetrics = Object.fromEntries(
+    safeMetrics = Object.fromEntries(
       Object.entries(metrics || {}).filter(([k, v]) => allowed.includes(k) && (typeof v === 'number' || typeof v === 'string'))
     );
 
@@ -62,10 +64,20 @@ export default async function handler(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error updating health metrics:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to update health metrics'
+    console.error('DB health metrics update unavailable, using static fallback:', error.message);
+
+    // Static demo fallback (works without a live MongoDB connection)
+    if (!findUserById(String(userId))) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    const stored = updateUserHealthMetrics(String(userId), safeMetrics);
+    return res.status(200).json({
+      success: true,
+      fallback: true,
+      data: {
+        current: stored.current,
+        history: [...stored.history].reverse().slice(0, 10)
+      }
     });
   }
 } 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { findMedicalRecord, deleteMedicalRecord } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
 
 export async function DELETE(request) {
@@ -27,8 +28,23 @@ export async function DELETE(request) {
       );
     }
     
-    // Connect to the database
-    const { db } = await connectToDatabase();
+    // Connect to the database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      const existing = findMedicalRecord(String(recordId));
+      if (!existing) {
+        return NextResponse.json({ error: 'Record not found' }, { status: 404 });
+      }
+      if (existing.userId !== userId) {
+        return NextResponse.json(
+          { error: 'You do not have permission to delete this record' },
+          { status: 403 }
+        );
+      }
+      deleteMedicalRecord(existing._id);
+      return NextResponse.json({ success: true, fallback: true, message: 'Record deleted successfully' });
+    }
+    const { db } = conn;
     
     // Verify the record exists and belongs to the user
     let objectId;

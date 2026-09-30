@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { connectToDatabase } from '../../../../lib/mongodb';
+import { tryConnectToDatabase } from '../../../../lib/mongodb';
+import { getMedicalRecords } from '../../../../lib/static-data';
 import { verifyToken } from '../../../../lib/jwt';
 
 export async function GET(request) {
@@ -45,8 +46,12 @@ export async function GET(request) {
       );
     }
 
-    // Connect to database
-    const { db } = await connectToDatabase();
+    // Connect to database (static fallback when MongoDB is unavailable)
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      return NextResponse.json({ records: getMedicalRecords(requestedUserId), fallback: true });
+    }
+    const { db } = conn;
     
     // Fetch medical records for the user
     const records = await db
