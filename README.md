@@ -17,7 +17,7 @@ Medisynix provides an interactive AI chatbot that allows users to ask healthcare
 
 The chatbot is powered by **Chatbase** and is configured specifically for:
 
-* 🏥 Aga Khan University Hospital (AKUH)
+* 🏥 Aga Khan University Hospital  (AKUH)
 * 🏥 Al Shifa Hospital
 
 The chatbot is intended to help users obtain relevant hospital and healthcare information through a conversational interface.
