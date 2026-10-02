@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { tryConnectToDatabase } from "../../../../lib/mongodb";
 import { updateUserProfile, updateUserHealthMetrics } from "../../../../lib/static-data";
 import { getAuthUser } from "../../../../lib/jwt";
+import { inactiveAccountResponse } from '../../../../lib/account';
 import { ObjectId } from "mongodb";
 
 export async function POST(request) {
@@ -11,6 +12,8 @@ export async function POST(request) {
     if (!authUser) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
+    const inactive = await inactiveAccountResponse(authUser);
+    if (inactive) return inactive;
 
     const userId = authUser.id;
 

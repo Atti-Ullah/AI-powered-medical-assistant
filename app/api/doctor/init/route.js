@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '../../../../lib/mongodb';
 import { getAuthUser, signToken } from '../../../../lib/jwt';
+import { inactiveAccountResponse } from '../../../../lib/account';
 
 export async function POST(request) {
   try {
@@ -9,6 +10,8 @@ export async function POST(request) {
     if (!authUser) {
       return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
     }
+    const inactive = await inactiveAccountResponse(authUser);
+    if (inactive) return inactive;
 
     const { doctorType } = await request.json();
 

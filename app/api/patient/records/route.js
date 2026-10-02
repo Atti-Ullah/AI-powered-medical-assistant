@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { tryConnectToDatabase } from '../../../../lib/mongodb';
 import { getMedicalRecords } from '../../../../lib/static-data';
 import { verifyToken } from '../../../../lib/jwt';
+import { inactiveAccountResponse } from '../../../../lib/account';
 
 export async function GET(request) {
   try {
@@ -26,6 +27,8 @@ export async function GET(request) {
         { status: 401 }
       );
     }
+    const inactive = await inactiveAccountResponse(verified);
+    if (inactive) return inactive;
     
     // Use the user ID from the token if not provided in the query
     const authenticatedUserId = verified.id;

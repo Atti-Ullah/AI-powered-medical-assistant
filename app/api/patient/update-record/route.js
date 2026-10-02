@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { tryConnectToDatabase } from '../../../../lib/mongodb';
 import { findMedicalRecord, updateMedicalRecord } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
+import { inactiveAccountResponse } from '../../../../lib/account';
 
 export async function PUT(request) {
   try {
@@ -14,6 +15,8 @@ export async function PUT(request) {
         { status: 401 }
       );
     }
+    const inactive = await inactiveAccountResponse(authUser);
+    if (inactive) return inactive;
 
     const userId = authUser.id;
     

@@ -2,7 +2,35 @@ import dbConnect from '../../../lib/db';
 import HealthMetric from '../../../models/HealthMetric';
 import User from '../../../models/User';
 import { updateUserHealthMetrics, findUserById } from '../../../lib/static-data';
+import { rejectInactiveAccount } from '../../../lib/account';
 import { getAuthUser, canAccessUser } from '../../../lib/jwt';
+
+// Plausible human ranges; rejects negative, absurd or non-numeric readings before they are stored
+const RANGES = {
+  height: [50, 260, 'Height must be between 50 and 260 cm'],
+  weight: [2, 500, 'Weight must be between 2 and 500 kg'],
+  heartRate: [20, 250, 'Heart rate must be between 20 and 250 bpm'],
+  glucoseLevel: [20, 900, 'Glucose must be between 20 and 900 mg/dL'],
+  bmi: [5, 100, 'BMI must be between 5 and 100'],
+};
+
+function validateMetrics(metrics) {
+  for (const [field, [min, max, message]] of Object.entries(RANGES)) {
+    if (metrics[field] === undefined || metrics[field] === '') continue;
+    const value = Number(metrics[field]);
+    if (!Number.isFinite(value) || value < min || value > max) return message;
+  }
+  if (metrics.bloodPressure !== undefined && metrics.bloodPressure !== '') {
+    const match = /^(\d{2,3})\/(\d{2,3})$/.exec(String(metrics.bloodPressure).trim());
+    const systolic = match ? Number(match[1]) : 0;
+    const diastolic = match ? Number(match[2]) : 0;
+    if (!match || systolic < 50 || systolic > 300 || diastolic < 30 || diastolic > 200 || systolic <= diastolic) {
+      return 'Blood pressure must look like 120/80 with a realistic systolic and diastolic value';
+    }
+  }
+  if (metrics.bmiStatus !== undefined && String(metrics.bmiStatus).length > 40) return 'BMI status is too long';
+  return '';
+}
 
 export default async function handler(req, res) {
   // Only allow POST method
@@ -25,12 +53,18 @@ export default async function handler(req, res) {
     if (!canAccessUser(authUser, userId)) {
       return res.status(403).json({ success: false, message: 'Not allowed to update these health metrics' });
     }
+    if (await rejectInactiveAccount(res, authUser)) return;
 
     // Only accept known metric fields; userId and timestamp are set by the server
     const allowed = ['height', 'weight', 'bloodPressure', 'heartRate', 'glucoseLevel', 'bmi', 'bmiStatus'];
     safeMetrics = Object.fromEntries(
       Object.entries(metrics || {}).filter(([k, v]) => allowed.includes(k) && (typeof v === 'number' || typeof v === 'string'))
     );
+
+    const invalid = validateMetrics(safeMetrics);
+    if (invalid) {
+      return res.status(400).json({ success: false, message: invalid });
+    }
 
     await dbConnect();
 

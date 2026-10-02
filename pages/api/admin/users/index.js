@@ -1,7 +1,7 @@
 import { requireAdmin, sendAdminError, listUsers, createAccount } from '../../../../lib/admin';
 
 export default async function handler(req, res) {
-  const authUser = requireAdmin(req, res);
+  const authUser = await requireAdmin(req, res);
   if (!authUser) return;
 
   try {

@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { tryConnectToDatabase } from '../../../../lib/mongodb';
 import { getMedicalRecords } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
+import { inactiveAccountResponse } from '../../../../lib/account';
 
 // GET endpoint to fetch a user's medical records
 export async function GET(request) {
@@ -15,6 +16,8 @@ export async function GET(request) {
         { status: 401 }
       );
     }
+    const inactive = await inactiveAccountResponse(authUser);
+    if (inactive) return inactive;
 
     const userId = authUser.id;
     

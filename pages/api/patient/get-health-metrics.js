@@ -2,6 +2,7 @@ import dbConnect from '../../../lib/db';
 import HealthMetric from '../../../models/HealthMetric';
 import User from '../../../models/User';
 import { getUserHealthMetrics } from '../../../lib/static-data';
+import { rejectInactiveAccount } from '../../../lib/account';
 import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 
 export default async function handler(req, res) {
@@ -23,6 +24,7 @@ export default async function handler(req, res) {
   if (!canAccessUser(authUser, userId)) {
     return res.status(403).json({ success: false, message: 'Not allowed to view these health metrics' });
   }
+  if (await rejectInactiveAccount(res, authUser)) return;
 
   try {
     await dbConnect();

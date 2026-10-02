@@ -99,6 +99,12 @@ const UserSchema = new mongoose.Schema({
   availableTimeSlots: {
     type: [String]
   },
+  // Administrators can suspend an account; suspended users cannot log in or use the API
+  status: {
+    type: String,
+    enum: ['active', 'suspended'],
+    default: 'active'
+  },
   // Password reset fields
   resetToken: {
     type: String

@@ -10,12 +10,14 @@ import {
 import { getAuthUser, canAccessUser } from '../../../lib/jwt';
 import { assertSlotBookable } from '../../../lib/doctor';
 import { sendAdminError, AdminError } from '../../../lib/admin';
+import { rejectInactiveAccount } from '../../../lib/account';
 
 export default async function handler(req, res) {
   const authUser = getAuthUser(req);
   if (!authUser) {
     return res.status(401).json({ success: false, message: 'Authentication required' });
   }
+  if (await rejectInactiveAccount(res, authUser)) return;
   req.authUser = authUser;
 
   // Handle different HTTP methods
@@ -157,6 +159,19 @@ async function checkReschedule(existing, updatedData) {
   );
 }
 
+// Patients may only cancel a visit that is still open; the doctor alone moves it forward.
+// Finished (completed or cancelled) visits are locked for everyone except an administrator.
+function checkTransition(authUser, existing, updatedData) {
+  if (authUser.type === 'admin') return;
+  const current = existing.status || 'pending';
+  if (['completed', 'cancelled'].includes(current)) {
+    throw new AdminError(400, `A ${current} appointment cannot be changed`);
+  }
+  if (updatedData.status !== undefined && updatedData.status !== current && updatedData.status !== 'cancelled') {
+    throw new AdminError(403, 'Patients can only cancel an appointment; the doctor confirms and completes visits');
+  }
+}
+
 // Update an existing appointment
 async function updateExistingAppointment(req, res) {
   const { appointmentId, date, time, status, reason, notes } = req.body || {};
@@ -182,6 +197,7 @@ async function updateExistingAppointment(req, res) {
       return res.status(403).json({ success: false, message: 'Not allowed to change this appointment' });
     }
 
+    checkTransition(req.authUser, existing, updatedData);
     await checkReschedule(existing, updatedData);
     updatedData.updatedAt = new Date();
 
@@ -213,6 +229,7 @@ async function updateExistingAppointment(req, res) {
     }
 
     try {
+      checkTransition(req.authUser, existing, updatedData);
       await checkReschedule(existing, updatedData);
     } catch (validationError) {
       return sendAdminError(res, validationError);

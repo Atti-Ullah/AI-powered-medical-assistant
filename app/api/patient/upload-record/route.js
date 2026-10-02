@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { tryConnectToDatabase } from '../../../../lib/mongodb';
 import { addMedicalRecord } from '../../../../lib/static-data';
 import { getAuthUser } from '../../../../lib/jwt';
+import { inactiveAccountResponse } from '../../../../lib/account';
 
 export async function POST(request) {
   try {
@@ -13,6 +14,8 @@ export async function POST(request) {
         { status: 401 }
       );
     }
+    const inactive = await inactiveAccountResponse(authUser);
+    if (inactive) return inactive;
 
     const userId = authUser.id;
     

@@ -6,7 +6,7 @@ export const config = { api: { bodyParser: { sizeLimit: '4mb' } } };
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, message: 'Method not allowed' });
-  const doctor = requireDoctor(req, res);
+  const doctor = await requireDoctor(req, res);
   if (!doctor) return;
   try {
     return res.status(201).json({ success: true, data: await addPatientReport(doctor.id, req.body || {}) });

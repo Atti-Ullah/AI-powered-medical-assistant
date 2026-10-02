@@ -3,7 +3,7 @@ import { requireDoctor, listAppointments } from '../../../../lib/doctor';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ success: false, message: 'Method not allowed' });
-  const doctor = requireDoctor(req, res);
+  const doctor = await requireDoctor(req, res);
   if (!doctor) return;
   try {
     const q = (key) => (typeof req.query[key] === 'string' ? req.query[key] : '');

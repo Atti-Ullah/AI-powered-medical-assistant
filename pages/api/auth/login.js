@@ -35,6 +35,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    if (user.status === 'suspended') {
+      return res.status(403).json({ success: false, message: 'This account has been suspended. Please contact an administrator.' });
+    }
+
     // Generate JWT token
     const token = generateToken({
       id: user._id,
@@ -60,6 +64,10 @@ export default async function handler(req, res) {
     const account = await getStaticFallback(email, password, userType);
     if (!account) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (account.suspended) {
+      return res.status(403).json({ success: false, message: 'This account has been suspended. Please contact an administrator.' });
     }
 
     const token = generateToken(account);

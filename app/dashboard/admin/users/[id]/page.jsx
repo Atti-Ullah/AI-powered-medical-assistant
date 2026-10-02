@@ -75,6 +75,7 @@ export default function AdminUserDetailPage() {
         specialty: form.specialty,
         experience: form.experience,
         education: form.education,
+        status: form.status,
       };
       if (form.password) body.password = form.password;
       const result = await adminRequest(token, `/api/admin/users/${params.id}`, { method: "PUT", body });
@@ -164,6 +165,16 @@ export default function AdminUserDetailPage() {
                   <option value="admin">Admin</option>
                 </select>
                 {isSelf && <p className="mt-1.5 text-xs text-slate-500">You cannot change your own role.</p>}
+              </div>
+              <div>
+                <label htmlFor="status" className="mb-1.5 block text-sm font-medium text-slate-700">Account status</label>
+                <select id="status" name="status" value={form.status || "active"} onChange={handleChange} disabled={isSelf} className={inputClass}>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  {isSelf ? "You cannot suspend your own account." : "A suspended user cannot log in or use the platform until reactivated."}
+                </p>
               </div>
               <Field
                 label="New password"
