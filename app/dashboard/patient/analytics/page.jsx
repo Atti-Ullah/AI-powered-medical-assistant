@@ -293,13 +293,6 @@ export default function AnalyticsPage() {
     return "high";
   }
 
-  function statusPalette(status) {
-    if (status === "normal" || status === "ok") return { bg: "bg-secondary-100", text: "text-secondary-800" };
-    if (status === "elevated" || status === "low") return { bg: "bg-amber-100", text: "text-amber-800" };
-    if (status === "high") return { bg: "bg-destructive-100", text: "text-destructive-700" };
-    return { bg: "bg-brand-100", text: "text-brand-800" };
-  }
-
   if (!user) {
     return null;
   }
@@ -604,6 +597,13 @@ export default function AnalyticsPage() {
       </div>
     </DashboardLayout>
   );
+}
+
+function statusPalette(status) {
+  if (status === "normal" || status === "ok") return { bg: "bg-secondary-100", text: "text-secondary-800" };
+  if (status === "elevated" || status === "low") return { bg: "bg-amber-100", text: "text-amber-800" };
+  if (status === "high") return { bg: "bg-destructive-100", text: "text-destructive-700" };
+  return { bg: "bg-brand-100", text: "text-brand-800" };
 }
 
 function MetricTile({ icon: Icon, label, value, meta, status, trend }) {
