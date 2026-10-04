@@ -25,6 +25,9 @@ import {
   ShieldCheckIcon,
   BellAlertIcon,
   DocumentArrowUpIcon,
+  CalendarDaysIcon,
+  ClipboardDocumentListIcon,
+  BeakerIcon,
 } from "@heroicons/react/24/outline";
 
 const userTypeNavigation = {
@@ -32,8 +35,11 @@ const userTypeNavigation = {
     { name: "Dashboard", href: "/dashboard/patient", icon: Squares2X2Icon },
     { name: "Health Profile", href: "/dashboard/patient/profile", icon: HeartIcon },
     { name: "Find a Doctor", href: "/dashboard/patient/find-doctor", icon: MagnifyingGlassCircleIcon },
+    { name: "Appointments", href: "/dashboard/patient/appointments", icon: CalendarDaysIcon },
     { name: "AI Doctor", href: "/dashboard/patient/ai-doctor", icon: SparklesIcon },
+    { name: "Symptom Checker", href: "/dashboard/patient/symptom-checker", icon: ClipboardDocumentListIcon },
     { name: "Medical Records", href: "/dashboard/patient/records", icon: FolderOpenIcon },
+    { name: "Medications", href: "/dashboard/patient/medications", icon: BeakerIcon },
     { name: "Consultations", href: "/dashboard/patient/consultations", icon: ChatBubbleLeftRightIcon },
     { name: "Analytics", href: "/dashboard/patient/analytics", icon: ChartBarSquareIcon },
   ],
@@ -137,7 +143,11 @@ function DashboardShell({ children }) {
   const activeItem = navigation.find((item) => isActive(item.href));
   // Pages outside the sidebar (e.g. Profile) are titled from their URL
   const lastSegment = pathname.split("/").filter(Boolean).pop() || "";
+  const segments = pathname.split("/").filter(Boolean);
+  const parentSegment = segments[segments.length - 2] || "";
+  const DETAIL_TITLES = { doctor: "Doctor Profile", patients: "Patient Details", users: "User Details" };
   const pageTitle =
+    (/\d/.test(lastSegment) && DETAIL_TITLES[parentSegment]) ||
     activeItem?.name ||
     (lastSegment && lastSegment !== userType ? lastSegment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Dashboard");
   const displayName = user.name || ROLE_LABELS[userType] || "User";

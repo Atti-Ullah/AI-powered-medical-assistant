@@ -13,25 +13,16 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   ExclamationCircleIcon,
-  SparklesIcon,
-  ChatBubbleLeftRightIcon,
-  MagnifyingGlassIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import {
   ResponsiveContainer,
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from "recharts";
 
 const BRAND = "#2563eb";
@@ -39,43 +30,12 @@ const TEAL = "#0d9488";
 const AMBER = "#f59e0b";
 const CORAL = "#e11d48";
 
-// Sample assistant telemetry. In production this streams from the Chatbase widget
-// (agent j2fgtClSFXZi_k4qdHnv7). Values shown are illustrative.
-const assistantWeeks = [
-  { week: "W1", sessions: 12, queries: 34, satisfaction: 88 },
-  { week: "W2", sessions: 18, queries: 51, satisfaction: 90 },
-  { week: "W3", sessions: 15, queries: 44, satisfaction: 89 },
-  { week: "W4", sessions: 24, queries: 68, satisfaction: 92 },
-  { week: "W5", sessions: 21, queries: 60, satisfaction: 91 },
-  { week: "W6", sessions: 29, queries: 83, satisfaction: 94 },
-  { week: "W7", sessions: 27, queries: 76, satisfaction: 93 },
-  { week: "W8", sessions: 34, queries: 97, satisfaction: 95 },
-];
-
-const queryCategories = [
-  { name: "Symptoms", value: 42 },
-  { name: "Appointments", value: 26 },
-  { name: "Reports & tests", value: 18 },
-  { name: "Medications", value: 9 },
-  { name: "General", value: 5 },
-];
-
-const commonQuestions = [
-  { question: "What can help with my persistent headache?", count: 38 },
-  { question: "How do I book a cardiology appointment?", count: 27 },
-  { question: "Explain my latest blood test results", count: 24 },
-  { question: "Is my blood pressure in a safe range?", count: 19 },
-  { question: "What vaccination is recommended for travel?", count: 12 },
-];
-
-const CATEGORY_COLORS = [BRAND, TEAL, AMBER, CORAL, "#64748b"];
-
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [healthMetrics, setHealthMetrics] = useState(null);
   const [appointmentStats, setAppointmentStats] = useState(null);
-  const [timeRange, setTimeRange] = useState("month"); // month, quarter, year
+  const [timeRange, setTimeRange] = useState("quarter"); // month, quarter, year
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -234,28 +194,14 @@ export default function AnalyticsPage() {
             bySpecialty,
           });
         } else {
-          // No real data yet — seed a clearly-labeled sample series so charts
-          // are explorable before live data flows in.
+          // No visits in the selected range
           setAppointmentStats({
             total: 0,
             upcoming: 0,
             past: 0,
             cancelled: 0,
-            byMonth: [
-              { month: "Jan", visits: 2 },
-              { month: "Feb", visits: 1 },
-              { month: "Mar", visits: 3 },
-              { month: "Apr", visits: 2 },
-              { month: "May", visits: 4 },
-              { month: "Jun", visits: 2 },
-            ],
-            bySpecialty: [
-              { name: "Cardiology", value: 4 },
-              { name: "General", value: 3 },
-              { name: "Dermatology", value: 2 },
-              { name: "Neurology", value: 1 },
-            ],
-            sample: true,
+            byMonth: [],
+            bySpecialty: [],
           });
         }
       } catch (err) {
@@ -317,11 +263,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  const totalQueries = assistantWeeks.reduce((s, w) => s + w.queries, 0);
-  const avgSatisfaction = Math.round(
-    assistantWeeks.reduce((s, w) => s + w.satisfaction, 0) / assistantWeeks.length
-  );
-  const sampleCount = assistantWeeks[assistantWeeks.length - 1].sessions;
+  const rangeLabel = { month: "last month", quarter: "last 3 months", year: "last 12 months" }[timeRange];
 
   return (
     <DashboardLayout>
@@ -331,11 +273,11 @@ export default function AnalyticsPage() {
           <div className="pointer-events-none absolute -right-16 -top-24 h-64 w-64 rounded-full bg-secondary-400/20 blur-3xl" aria-hidden="true" />
           <div className="relative">
             <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Your insights
+              Health insights
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-brand-100/90">
-              Live activity from your Medisynix assistant and clinician visits,
-              rolled into one view. Sample series are clearly marked.
+              Your latest vitals and clinic visits in one place, built from the
+              information saved in your account.
             </p>
           </div>
         </section>
@@ -344,36 +286,36 @@ export default function AnalyticsPage() {
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
-              label: "AI sessions · 8 weeks",
-              value: String(totalQueries),
-              unit: "queries",
-              icon: ChatBubbleLeftRightIcon,
-              accent: "bg-secondary-600/10 text-secondary-700",
-              trend: "+12% vs prior period",
-            },
-            {
-              label: "Avg. answer time",
-              value: "1.1",
-              unit: "seconds",
-              icon: ClockIcon,
-              accent: "bg-brand-600/10 text-brand-700",
-              trend: "0.2s faster",
-            },
-            {
-              label: "Satisfaction",
-              value: `${avgSatisfaction}%`,
-              unit: "this week",
-              icon: SparklesIcon,
-              accent: "bg-secondary-600/10 text-secondary-700",
-              trend: "↑ healthy trend",
-            },
-            {
-              label: "Clinic appointments",
+              label: "Appointments",
               value: String(appointmentStats ? appointmentStats.total : 0),
               unit: "in range",
               icon: CalendarDaysIcon,
               accent: "bg-brand-600/10 text-brand-700",
-              trend: appointmentStats && appointmentStats.sample ? "sample data" : "live record",
+              trend: rangeLabel,
+            },
+            {
+              label: "Upcoming",
+              value: String(appointmentStats ? appointmentStats.upcoming : 0),
+              unit: "booked",
+              icon: ClockIcon,
+              accent: "bg-secondary-600/10 text-secondary-700",
+              trend: "still ahead",
+            },
+            {
+              label: "Completed",
+              value: String(appointmentStats ? appointmentStats.past : 0),
+              unit: "visits",
+              icon: ShieldCheckIcon,
+              accent: "bg-secondary-600/10 text-secondary-700",
+              trend: "seen by a doctor",
+            },
+            {
+              label: "Cancelled",
+              value: String(appointmentStats ? appointmentStats.cancelled : 0),
+              unit: "visits",
+              icon: ExclamationCircleIcon,
+              accent: "bg-brand-600/10 text-brand-700",
+              trend: rangeLabel,
             },
           ].map((kpi) => (
             <div key={kpi.label} className="card rounded-xl p-5">
@@ -415,8 +357,7 @@ export default function AnalyticsPage() {
                     icon={ScaleIcon}
                     label="Weight"
                     value={`${healthMetrics.weight.value} kg`}
-                    meta={`${healthMetrics.weight.change} kg change`}
-                    trend={healthMetrics.weight.trend}
+                    meta="Latest reading"
                   />
                   <MetricTile
                     icon={HeartIcon}
@@ -443,116 +384,37 @@ export default function AnalyticsPage() {
               </section>
             )}
 
-            {/* Assistant & appointment charts */}
-            <section id="assistant-analytics">
-              <h2 className="mb-4 text-lg font-semibold text-ink">AI assistant activity</h2>
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div className="card rounded-2xl p-5 lg:col-span-2">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-ink">Queries & satisfaction</h3>
-                    <span className="glass px-2.5 py-1 text-[11px] font-semibold text-secondary-800">
-                      sample series
-                    </span>
-                  </div>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={assistantWeeks} margin={{ top: 5, right: 10, left: -18, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="queriesFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={BRAND} stopOpacity={0.25} />
-                            <stop offset="100%" stopColor={BRAND} stopOpacity={0} />
-                          </linearGradient>
-                          <linearGradient id="satFill" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={TEAL} stopOpacity={0.25} />
-                            <stop offset="100%" stopColor={TEAL} stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(16,24,40,0.08)" />
-                        <XAxis dataKey="week" tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 11, fill: "var(--text-tertiary)" }} axisLine={false} tickLine={false} />
-                        <Tooltip content={<ChartTooltip />} />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Area type="monotone" dataKey="queries" name="Queries" stroke={BRAND} strokeWidth={2} fill="url(#queriesFill)" />
-                        <Area type="monotone" dataKey="satisfaction" name="Satisfaction %" stroke={TEAL} strokeWidth={2} fill="url(#satFill)" />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="card rounded-2xl p-5">
-                  <h3 className="text-sm font-semibold text-ink">Query categories</h3>
-                  <div className="h-56">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={queryCategories}
-                          dataKey="value"
-                          nameKey="name"
-                          innerRadius={45}
-                          outerRadius={72}
-                          paddingAngle={3}
-                        >
-                          {queryCategories.map((_, i) => (
-                            <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<ChartTooltip />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <ul className="mt-2 space-y-1.5">
-                    {queryCategories.map((cat, i) => (
-                      <li key={cat.name} className="flex items-center justify-between text-xs">
-                        <span className="flex items-center gap-2 text-muted">
-                          <span
-                            className="inline-block h-2.5 w-2.5 rounded-full"
-                            style={{ backgroundColor: CATEGORY_COLORS[i] }}
-                          />
-                          {cat.name}
-                        </span>
-                        <span className="font-semibold text-ink">{cat.value}%</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </section>
-
-            {/* Common questions + appointments */}
-            <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="card rounded-2xl p-5">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-ink">
-                  <MagnifyingGlassIcon className="h-4 w-4 text-brand-600" aria-hidden="true" />
-                  Frequently asked with the assistant
-                </h3>
-                <ul className="mt-4 space-y-3">
-                  {commonQuestions.map((q) => (
-                    <li key={q.question}>
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs font-medium text-ink">{q.question}</p>
-                        <span className="w-8 text-right text-xs font-semibold text-muted">{q.count}</span>
-                      </div>
-                      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-brand-600 to-secondary-500"
-                          style={{ width: `${(q.count / commonQuestions[0].count) * 100}%` }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
+            {/* Clinic visits */}
+            <section>
               <div className="card rounded-2xl p-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-ink">Clinic visits by month</h3>
-                  {appointmentStats?.sample && (
-                    <span className="glass px-2.5 py-1 text-[11px] font-semibold text-secondary-800">
-                      sample series
-                    </span>
-                  )}
+                  <div className="inline-flex rounded-lg bg-muted-background p-0.5" role="group" aria-label="Time range">
+                    {[
+                      ["month", "1 month"],
+                      ["quarter", "3 months"],
+                      ["year", "12 months"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setTimeRange(value)}
+                        aria-pressed={timeRange === value}
+                        className={`rounded-md px-3 py-1 text-xs font-semibold transition ${
+                          timeRange === value ? "bg-white text-brand-700 shadow-sm" : "text-muted hover:text-ink"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="h-64">
+                {appointmentStats && appointmentStats.total === 0 && (
+                  <p className="mt-6 text-sm text-muted">
+                    No appointments in this period. Book a visit from Find a Doctor and it will appear here.
+                  </p>
+                )}
+                <div className={`h-64 ${appointmentStats && appointmentStats.total === 0 ? "hidden" : ""}`}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={appointmentStats?.byMonth || []} margin={{ top: 5, right: 10, left: -22, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(16,24,40,0.08)" />
@@ -587,8 +449,7 @@ export default function AnalyticsPage() {
                 <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
               </div>
               <p className="text-xs leading-relaxed text-muted">
-                Charts labelled <span className="font-semibold text-ink">sample series</span> demonstrate the
-                reporting you will see once live clinic and assistant data flows in. Insights are
+                These insights come from the vitals and appointments saved in your account. They are
                 informational and never a substitute for professional medical advice.
               </p>
             </section>

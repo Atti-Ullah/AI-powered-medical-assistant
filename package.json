@@ -7,7 +7,8 @@
     "dev": "concurrently \"node auth/server.js\" \"next dev\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "demo:reset": "node scripts/reset-demo-data.mjs"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.18",

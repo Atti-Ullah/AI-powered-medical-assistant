@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import DashboardLayout from "../../../../components/DashboardLayout";
+import toast from "react-hot-toast";
 import {
   UserIcon,
   HeartIcon,
@@ -146,10 +147,7 @@ export default function PatientProfilePage() {
         }),
       });
 
-      console.log("Profile update response status:", response.status);
-
       const responseText = await response.text();
-      console.log("Raw response:", responseText);
 
       let data;
       try {
@@ -163,8 +161,6 @@ export default function PatientProfilePage() {
         console.error("Server returned error:", data);
         throw new Error(data.error || "Failed to update profile");
       }
-
-      console.log("Profile updated successfully on server:", data);
 
       // Now also update the local state via the updateProfile function
       // This ensures local state stays in sync with the server
@@ -185,51 +181,13 @@ export default function PatientProfilePage() {
         lastMetricsUpdate: new Date().toISOString(),
       });
 
-      console.log("Local profile update result:", updateResult);
-
-      // Extract health metrics for the dedicated health metrics API
-      const healthMetrics = {
-        height: formData.height,
-        weight: formData.weight,
-        bloodPressure: formData.bloodPressure,
-        heartRate: formData.heartRate,
-        glucoseLevel: formData.glucoseLevel,
-        bmi: calculateBMI(),
-        bmiStatus: bmi ? getBMIStatus(Number(bmi)) : null,
-      };
-
-      // Also update the health metrics in their dedicated collection
-      const metricsResponse = await fetch(
-        "/api/patient/update-health-metrics",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            userId: user._id || user.id,
-            metrics: healthMetrics,
-          }),
-        }
-      );
-
-      if (!metricsResponse.ok) {
-        console.warn(
-          "Health metrics update failed, but profile was updated successfully"
-        );
-      } else {
-        console.log("Health metrics updated successfully");
-      }
-
       setIsEditing(false);
 
-      // Show success indicator (temporary alert since we don't have toast)
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile and metrics:", error);
       // Show error message to user
-      alert("Failed to update profile: " + error.message);
+      toast.error(error.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }

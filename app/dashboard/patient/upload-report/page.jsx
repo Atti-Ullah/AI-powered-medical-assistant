@@ -60,6 +60,7 @@ export default function UploadReportPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [savedToRecords, setSavedToRecords] = useState(false);
   const [error, setError] = useState("");
 
   // Reset form when report type changes
@@ -263,8 +264,34 @@ export default function UploadReportPage() {
       }
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      setAnalysisResult(buildAnalysis());
+      const analysis = buildAnalysis();
+      setAnalysisResult(analysis);
       setUploadComplete(true);
+
+      // Keep the result: add it to the patient's Medical Records so it can be found later
+      try {
+        const label =
+          (reportType === "image"
+            ? IMAGE_MODALITIES.find((m) => m.value === selectedModality)?.label
+            : LAB_TEST_TYPES.find((t) => t.value === selectedTestType)?.label) || "Report";
+        const saveResponse = await fetch("/api/patient/upload-record", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.token}` },
+          body: JSON.stringify({
+            title: `${label} - AI summary`,
+            type: reportType === "image" ? "imaging" : "lab",
+            date: new Date().toLocaleDateString("en-CA"),
+            doctor: "Medisynix AI summary",
+            findings: `${analysis.plainLanguage}
+
+Impression: ${analysis.impression || (analysis.flagged ? "Some values outside the normal range." : "Within normal limits.")}`,
+            status: analysis.flagged ? "reviewed" : "Active",
+          }),
+        });
+        setSavedToRecords(saveResponse.ok);
+      } catch (saveError) {
+        console.warn("Could not save the summary to records:", saveError);
+      }
     } catch (err) {
       setError("An error occurred while uploading the file. Please try again.");
       console.error("Upload error:", err);
@@ -274,6 +301,7 @@ export default function UploadReportPage() {
   };
 
   const resetForm = () => {
+    setSavedToRecords(false);
     setReportType("");
     setSelectedModality("");
     setSelectedTestType("");
@@ -307,9 +335,9 @@ export default function UploadReportPage() {
               Upload a medical report
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-brand-100/90">
-              Upload an imaging study or lab report. Medisynix reads it, writes a
-              plain-language summary, and shows you exactly how it reached its
-              reading.
+              Upload an imaging study or lab report and get a plain-language
+              explanation with a confidence score and the key points behind it.
+              The summary is saved to your Medical Records.
             </p>
           </div>
         </section>
@@ -321,7 +349,7 @@ export default function UploadReportPage() {
                 <div>
                   <h2 className="text-lg font-semibold text-ink">What kind of report?</h2>
                   <p className="mt-1 text-sm text-muted">
-                    Choose the closest match so the reading engine uses the right model.
+                    Choose the closest match so the explanation fits your report.
                   </p>
                   <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
                     <button
@@ -515,7 +543,8 @@ export default function UploadReportPage() {
                 <div>
                   <p className="text-sm font-semibold text-secondary-800">Analysis complete</p>
                   <p className="mt-0.5 text-sm text-secondary-700">
-                    {reportLabel} read in ~2s. Review the plain-language summary below.
+                    Review the plain-language summary below.
+                    {savedToRecords ? " A copy was saved to your Medical Records." : ""}
                   </p>
                 </div>
               </div>
@@ -669,9 +698,9 @@ export default function UploadReportPage() {
                 </ul>
 
                 <p className="mt-4 rounded-xl border border-border p-3.5 text-xs leading-relaxed text-muted">
-                  This summary is informational and generated for demonstration. It is not a
-                  diagnosis and does not replace a radiologist&apos;s or clinician&apos;s formal
-                  report. {analysisResult.flagged ? "Values outside the normal band should be discussed with your doctor." : ""}
+                  This is a sample explanation for the selected test type; the full product would send
+                  your file to a medical AI model. It is not a diagnosis and does not replace a
+                  radiologist&apos;s or clinician&apos;s formal report. {analysisResult.flagged ? "Values outside the normal band should be discussed with your doctor." : ""}
                 </p>
               </section>
 
@@ -686,7 +715,7 @@ export default function UploadReportPage() {
                   className="btn btn-primary"
                 >
                   <span className="flex items-center">
-                    View all reports
+                    Open Medical Records
                     <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
                   </span>
                 </button>

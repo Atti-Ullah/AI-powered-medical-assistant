@@ -39,7 +39,7 @@ export default function DoctorProfilePage() {
     while (dates.length < 5) {
       day.setDate(day.getDate() + 1);
       if (day.getDay() !== 0 && day.getDay() !== 6) {
-        dates.push(day.toISOString().split("T")[0]);
+        dates.push(day.toLocaleDateString("en-CA")); // local date, not UTC
       }
     }
     return dates;
@@ -160,8 +160,7 @@ export default function DoctorProfilePage() {
                   className="object-cover w-full h-full"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src =
-                      "https://via.placeholder.com/150?text=Doctor";
+                    e.target.style.display = "none";
                   }}
                 />
               ) : (
@@ -202,24 +201,6 @@ export default function DoctorProfilePage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-center md:justify-start mb-4">
-              <div className="flex items-center mr-4">
-                {[...Array(5)].map((_, i) => (
-                  <StarIcon
-                    key={i}
-                    className={`h-5 w-5 ${
-                      i < Math.floor(doctor.rating)
-                        ? "text-yellow-400 fill-current"
-                        : "text-gray-300"
-                    }`}
-                  />
-                ))}
-                <span className="ml-2 text-sm text-gray-600">
-                  ({doctor.reviews} reviews)
-                </span>
-              </div>
-            </div>
-
             <div className="flex flex-wrap justify-center md:justify-start gap-3 mt-4">
               <a
                 href={`/dashboard/patient/appointments?doctor=${doctor.id}`}
@@ -227,14 +208,6 @@ export default function DoctorProfilePage() {
               >
                 <CalendarDaysIcon className="h-5 w-5 mr-2" />
                 Book Appointment
-              </a>
-
-              <a
-                href={`/dashboard/patient/chat?doctor=${doctor.id}`}
-                className="px-4 py-2 bg-white text-primary-600 border border-primary-600 rounded-md hover:bg-primary-50 transition inline-flex items-center"
-              >
-                <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
-                Chat Now
               </a>
             </div>
           </div>
@@ -261,6 +234,7 @@ export default function DoctorProfilePage() {
               </div>
             </div>
 
+            {doctor.certifications?.length > 0 && (
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-800 mb-3">
                 Certifications
@@ -275,6 +249,7 @@ export default function DoctorProfilePage() {
                   ))}
               </ul>
             </div>
+            )}
 
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-800 mb-3">
@@ -295,6 +270,7 @@ export default function DoctorProfilePage() {
           </div>
 
           {/* Services */}
+          {doctor.services?.length > 0 && (
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-gray-800 mb-4">Services</h2>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -307,6 +283,7 @@ export default function DoctorProfilePage() {
                 ))}
             </ul>
           </div>
+          )}
 
           {/* Working Hours */}
           <div className="bg-white rounded-lg shadow-md p-6">
@@ -329,65 +306,6 @@ export default function DoctorProfilePage() {
             </div>
           </div>
 
-          {/* Reviews */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800">
-                Patient Reviews
-              </h2>
-              <span className="text-primary-600 font-medium">
-                {doctor.rating.toFixed(1)}/5 ({doctor.reviews} reviews)
-              </span>
-            </div>
-
-            <div className="space-y-6">
-              {doctor.patientReviews &&
-                doctor.patientReviews.map((review) => (
-                  <div
-                    key={review.id}
-                    className="border-b border-gray-100 pb-6 last:border-0 last:pb-0"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center text-primary-600 mr-3">
-                          {review.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <h4 className="text-gray-800 font-medium">
-                            {review.name}
-                          </h4>
-                          <p className="text-gray-500 text-sm">
-                            {new Date(review.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <StarIcon
-                            key={i}
-                            className={`h-4 w-4 ${
-                              i < review.rating
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-gray-700">{review.comment}</p>
-                  </div>
-                ))}
-            </div>
-
-            <div className="mt-6 text-center">
-              <a
-                href="#"
-                className="text-primary-600 hover:text-primary-800 font-medium"
-              >
-                View All Reviews
-              </a>
-            </div>
-          </div>
         </div>
 
         {/* Right Column - Booking Widget */}
@@ -452,50 +370,27 @@ export default function DoctorProfilePage() {
 
             {/* Booking Button */}
             <div className="mt-6">
-              <a
-                href={
-                  selectedDate && selectedTimeSlot
-                    ? `/dashboard/patient/appointments?doctor=${
-                        doctor.id
-                      }&date=${selectedDate}&time=${encodeURIComponent(
-                        selectedTimeSlot
-                      )}`
-                    : `/dashboard/patient/appointments?doctor=${doctor.id}`
-                }
-                className={`block w-full px-4 py-3 rounded-md text-white text-center ${
-                  selectedDate && selectedTimeSlot
-                    ? "bg-primary-600 hover:bg-primary-700"
-                    : "bg-gray-400 cursor-not-allowed"
-                } transition`}
-                disabled={!selectedDate || !selectedTimeSlot}
-              >
-                Book Appointment
-              </a>
+              {selectedDate && selectedTimeSlot ? (
+                <a
+                  href={`/dashboard/patient/appointments?doctor=${doctor.id}&date=${selectedDate}&time=${encodeURIComponent(selectedTimeSlot)}`}
+                  className="block w-full rounded-md bg-primary-600 px-4 py-3 text-center text-white transition hover:bg-primary-700"
+                >
+                  Book Appointment
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="block w-full cursor-not-allowed rounded-md bg-gray-300 px-4 py-3 text-center text-white"
+                >
+                  Select a date and time
+                </button>
+              )}
               <p className="text-center mt-3 text-sm text-gray-500">
                 Consultation Fee: Rs. {doctor.consultationFee}
               </p>
             </div>
 
-            {/* Additional Contact Options */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="text-gray-700 font-medium mb-3">Need help?</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={`/dashboard/patient/chat?doctor=${doctor.id}`}
-                  className="flex items-center justify-center px-4 py-2 border border-primary-600 rounded-md text-primary-600 hover:bg-primary-50"
-                >
-                  <ChatBubbleLeftRightIcon className="h-5 w-5 mr-2" />
-                  Chat
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                >
-                  <PhoneIcon className="h-5 w-5 mr-2" />
-                  Call
-                </a>
-              </div>
-            </div>
           </div>
 
           {/* Similar Doctors */}
@@ -522,8 +417,7 @@ export default function DoctorProfilePage() {
                           className="object-cover w-full h-full"
                           onError={(e) => {
                             e.target.onerror = null;
-                            e.target.src =
-                              "https://via.placeholder.com/150?text=Doctor";
+                            e.target.style.display = "none";
                           }}
                         />
                       ) : (
@@ -533,23 +427,6 @@ export default function DoctorProfilePage() {
                     <div className="flex-1">
                       <h3 className="text-gray-800 font-medium">{doc.name}</h3>
                       <p className="text-gray-600 text-sm">{doc.specialty}</p>
-                      <div className="flex items-center mt-1">
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <StarIcon
-                              key={i}
-                              className={`h-3 w-3 ${
-                                i < Math.floor(doc.rating)
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="ml-2 text-xs text-gray-500">
-                          ({doc.reviews})
-                        </span>
-                      </div>
                       <a
                         href={`/dashboard/patient/doctor/${doc.id}`}
                         className="text-primary-600 hover:text-primary-800 text-sm font-medium mt-2 inline-block"

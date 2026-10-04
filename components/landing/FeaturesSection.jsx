@@ -81,7 +81,7 @@ function MockReportAnalysis() {
         ))}
       </div>
       <div className="glass inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-teal-700">
-        AI summarized in ~4s · key values highlighted
+        Sample summary · key values highlighted
       </div>
     </div>
   );
@@ -203,7 +203,7 @@ export default function FeaturesSection() {
             Features
           </h2>
           <p className="mt-3 font-heading text-[2rem] font-bold tracking-tight text-gray-900">
-            A real clinical assistant, not a chat toy
+            A health assistant that shows its reasoning
           </p>
           <p className="mt-4 text-[1.0625rem] leading-8 text-gray-600">
             Every feature ships a working interface — from diagnostic guidance

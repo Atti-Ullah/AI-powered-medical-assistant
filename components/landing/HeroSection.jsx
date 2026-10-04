@@ -44,7 +44,7 @@ export default function HeroSection() {
               <span className="h-2 w-2 rounded-full bg-accent-500" />
               AI-powered healthcare assistant
             </div>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-[2.75rem] lg:text-[3.25rem]">
+            <h1 className="mt-6 text-4xl font-bold leading-[1.12] tracking-tight text-gray-900 sm:text-[2.75rem] lg:text-[3.25rem]">
               Clinical answers you can{" "}
               <span className="bg-gradient-to-r from-brand-700 to-accent-600 bg-clip-text text-transparent">
                 trust

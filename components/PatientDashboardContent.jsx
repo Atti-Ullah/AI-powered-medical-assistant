@@ -76,37 +76,6 @@ const quickActions = [
   },
 ];
 
-// Static demo of recent AI conversations (no chat history is persisted)
-const recentSessions = [
-  {
-    id: 1,
-    title: "Persistent headaches after work",
-    lastActivity: "2 hours ago",
-    confidence: 94,
-    responseTime: "1.2s",
-    summary:
-      "Medisynix flagged tension-type headache and recommended rest, hydration, and a follow-up if pain worsens.",
-  },
-  {
-    id: 2,
-    title: "Booking a cardiology appointment",
-    lastActivity: "Yesterday",
-    confidence: 100,
-    responseTime: "0.8s",
-    summary:
-      "Found 3 available cardiologists near you and drafted a booking request for review.",
-  },
-  {
-    id: 3,
-    title: "Explaining my last blood test",
-    lastActivity: "3 days ago",
-    confidence: 91,
-    responseTime: "1.6s",
-    summary:
-      "Broken your CBC report into plain language with normal range comparisons for each marker.",
-  },
-];
-
 export default function PatientDashboardContent() {
   const { user } = useAuth();
   const [healthMetrics, setHealthMetrics] = useState([]);
@@ -257,8 +226,22 @@ export default function PatientDashboardContent() {
             ) || []
           );
 
-          // Reports
-          setRecentReports(userData.reports || []);
+          // Reports: the patient's real medical records, newest first
+          try {
+            const recordsRes = await fetch(
+              `/api/patient/records?userId=${user._id || user.id}`,
+              { headers: { Authorization: `Bearer ${user.token}` } }
+            );
+            if (recordsRes.ok) {
+              const recordsData = await recordsRes.json();
+              const sorted = [...(recordsData.records || [])].sort(
+                (a, b) => new Date(b.date) - new Date(a.date)
+              );
+              setRecentReports(sorted);
+            }
+          } catch (recordsError) {
+            console.warn("Could not load medical records:", recordsError);
+          }
         } catch (error) {
           console.error("Error fetching patient data:", error);
         } finally {
@@ -411,14 +394,14 @@ export default function PatientDashboardContent() {
                 {firstName}&apos;s Health Overview
               </h1>
               <p className="mt-2 max-w-xl text-sm text-brand-100/90">
-                Your clinical assistant summarized the latest signals below.
-                Everything is traceable and reviewed with a human-first care
-                model.
+                A quick look at your latest vitals, upcoming visits and records.
+                These are general indicators, not a diagnosis. Talk to a doctor
+                about anything that worries you.
               </p>
             </div>
             <div className="glass inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white">
               <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
-              Verified patient account
+              Patient account
             </div>
           </div>
         </div>
@@ -672,48 +655,48 @@ export default function PatientDashboardContent() {
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card rounded-2xl p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-ink">
-              Recent AI conversations
-            </h2>
+            <h2 className="text-lg font-semibold text-ink">Talk to the AI Doctor</h2>
             <Link
               href="/dashboard/patient/ai-doctor"
               className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700"
             >
-              Open assistant
+              Open
               <ArrowRightIcon className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
+          <p className="mt-2 text-sm text-muted">
+            Ask health questions in plain language, any time. Answers are informational and never replace a doctor.
+          </p>
           <ul className="mt-4 space-y-3">
-            {recentSessions.map((session) => (
-              <li key={session.id}>
+            {[
+              {
+                title: "General AI Doctor",
+                text: "Symptoms, hospital services, clinic hours and booking guidance for AKUH and Al Shifa.",
+                href: "/dashboard/patient/ai-doctor",
+              },
+              {
+                title: "Symptom Checker",
+                text: "Pick your symptoms and see which common conditions fit, with a suggested next step.",
+                href: "/dashboard/patient/symptom-checker",
+              },
+              {
+                title: "Find a doctor",
+                text: "Browse specialists and book a free time slot in a few clicks.",
+                href: "/dashboard/patient/find-doctor",
+              },
+            ].map((item) => (
+              <li key={item.title}>
                 <Link
-                  href="/dashboard/patient/ai-doctor"
-                  className="group block rounded-xl border border-border p-4 transition-colors hover:bg-surface"
+                  href={item.href}
+                  className="group flex items-start gap-3 rounded-xl border border-border p-4 transition-colors hover:bg-surface"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
-                        <ChatBubbleBottomCenterTextIcon
-                          className="h-4 w-4"
-                          aria-hidden="true"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-ink group-hover:text-brand-700">
-                          {session.title}
-                        </p>
-                        <p className="text-[11px] text-muted">
-                          {session.lastActivity} · answered in {session.responseTime}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="glass shrink-0 text-[11px] font-semibold text-secondary-800">
-                      {session.confidence}%
-                    </span>
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
+                    <ChatBubbleBottomCenterTextIcon className="h-4 w-4" aria-hidden="true" />
                   </div>
-                  <p className="mt-2.5 text-xs leading-relaxed text-muted">
-                    {session.summary}
-                  </p>
+                  <div>
+                    <p className="text-sm font-semibold text-ink group-hover:text-brand-700">{item.title}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted">{item.text}</p>
+                  </div>
                 </Link>
               </li>
             ))}
@@ -736,9 +719,9 @@ export default function PatientDashboardContent() {
           ) : recentReports.length > 0 ? (
             <ul className="mt-4 space-y-3">
               {recentReports.slice(0, 4).map((report) => (
-                <li key={report.id}>
+                <li key={report._id || report.id}>
                   <Link
-                    href={`/dashboard/patient/records/${report.id}`}
+                    href="/dashboard/patient/records"
                     className="flex items-center gap-3 rounded-xl border border-border p-4 transition-colors hover:bg-surface"
                   >
                     <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600/10 text-brand-700">
@@ -746,9 +729,9 @@ export default function PatientDashboardContent() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-ink">
-                        {report.name}
+                        {report.title || report.name}
                       </p>
-                      <p className="text-[11px] text-muted">
+                      <p className="text-[11px] capitalize text-muted">
                         {report.type} · {report.date}
                       </p>
                     </div>

@@ -1,10 +1,6 @@
-"use client";
-import { useEffect } from "react";
+import { redirect } from "next/navigation";
 
-export default function JobDescription() {
-  useEffect(() => {
-    document.body.style.overflow = "hidden";
-  }, []);
-
-  return <div></div>;
+// Placeholder route left over from an earlier template; send visitors to the home page
+export default function Page() {
+  redirect("/");
 }

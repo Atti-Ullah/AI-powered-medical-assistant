@@ -30,6 +30,10 @@ function TimeOptions({ slots, ready }) {
   );
 }
 
+// Today's date as YYYY-MM-DD in the user's own time zone (toISOString would use UTC, which is a day
+// behind local time for the first hours of the day in Pakistan)
+const localToday = () => new Date().toLocaleDateString("en-CA");
+
 export default function AppointmentsPage() {
   const { user, updateProfile } = useAuth();
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -67,7 +71,7 @@ export default function AppointmentsPage() {
   const getAppointmentTab = (appt) => {
     if (appt.status === "cancelled") return "cancelled";
     if (appt.status === "completed") return "past";
-    const today = new Date().toISOString().split("T")[0];
+    const today = localToday();
     return appt.date && appt.date < today ? "past" : "upcoming";
   };
 
@@ -465,7 +469,7 @@ export default function AppointmentsPage() {
                       value={formData.date}
                       onChange={handleChange}
                       required
-                      min={new Date().toISOString().split("T")[0]}
+                      min={localToday()}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   </div>
@@ -699,7 +703,7 @@ export default function AppointmentsPage() {
                     name="date"
                     value={rescheduleData.date}
                     onChange={handleRescheduleChange}
-                    min={new Date().toISOString().split("T")[0]}
+                    min={localToday()}
                     required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />

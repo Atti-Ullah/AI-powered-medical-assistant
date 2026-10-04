@@ -21,9 +21,11 @@ export default function AIDoctorSelectionPage() {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [error, setError] = useState('');
 
   const handleDoctorSelect = async (doctorType) => {
     setIsLoading(true);
+    setError('');
     setSelectedDoctor(doctorType);
 
     try {
@@ -48,11 +50,11 @@ export default function AIDoctorSelectionPage() {
         router.push(`/dashboard/patient/ai-doctor/${doctorType}`);
       } else {
         console.error('Error initializing doctor session:', data.message);
-        // Handle error (show message to user)
+        setError(data.message || data.error || 'We could not start the session. Please try again.');
       }
     } catch (error) {
       console.error('Error selecting doctor:', error);
-      // Handle error (show message to user)
+      setError('We could not start the session. Please check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +64,12 @@ export default function AIDoctorSelectionPage() {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">AI Doctor</h1>
       <p className="text-gray-600 mb-8">Choose which AI doctor you'd like to consult with</p>
+
+      {error && (
+        <div role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-200">
+          {error}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* General AI Doctor */}
@@ -96,11 +104,11 @@ export default function AIDoctorSelectionPage() {
               <div className="space-y-3 mt-6">
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">No account or personal information required</p>
+                  <p className="ml-3 text-gray-600">Your health profile is not shared with this assistant</p>
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">Anonymous consultations</p>
+                  <p className="ml-3 text-gray-600">Ask about symptoms, hospitals and services</p>
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
@@ -108,14 +116,14 @@ export default function AIDoctorSelectionPage() {
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">No conversation history stored</p>
+                  <p className="ml-3 text-gray-600">Chats are not added to your Medisynix records</p>
                 </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <div className="flex items-center text-primary-600">
                   <LockClosedIcon className="h-5 w-5 mr-2" />
-                  <span className="font-medium">Medical privacy maintained</span>
+                  <span className="font-medium">Information only, never a diagnosis</span>
                 </div>
               </div>
             </div>
@@ -163,8 +171,8 @@ export default function AIDoctorSelectionPage() {
 
             <div className="mt-6">
               <p className="text-gray-600 mb-4">
-                Get personalized healthcare advice based on your medical history and profile.
-                Your personal AI doctor remembers your information for more tailored guidance.
+                Chat with an assistant that shows your saved health summary (age, conditions, allergies and
+                medications) next to the conversation, so you can mention the right details.
               </p>
 
               <div className="space-y-3 mt-6">
@@ -174,22 +182,22 @@ export default function AIDoctorSelectionPage() {
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">Conversation history saved for context</p>
+                  <p className="ml-3 text-gray-600">Your saved health summary shown alongside the chat</p>
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">Considers your medical history</p>
+                  <p className="ml-3 text-gray-600">Reminds you of your conditions, allergies and medications</p>
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                  <p className="ml-3 text-gray-600">Continuous care with follow-ups</p>
+                  <p className="ml-3 text-gray-600">Helps you decide when to book a doctor</p>
                 </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-100">
                 <div className="flex items-center text-primary-600">
                   <ShieldCheckIcon className="h-5 w-5 mr-2" />
-                  <span className="font-medium">End-to-end encrypted health data</span>
+                  <span className="font-medium">Your health summary is only visible to you</span>
                 </div>
               </div>
             </div>
@@ -219,7 +227,7 @@ export default function AIDoctorSelectionPage() {
           <p>• The AI Doctor provides information for educational purposes only and is not a replacement for professional medical advice.</p>
           <p>• In case of a medical emergency, please call emergency services immediately.</p>
           <p>• We recommend consulting with a human healthcare provider for diagnosis and treatment decisions.</p>
-          <p>• The Personal AI Doctor stores your conversation history and health data securely to provide personalized responses.</p>
+          <p>• The Personal AI Doctor shows the health summary saved in your profile. Keep it up to date for the most useful conversations.</p>
         </div>
       </div>
     </div>

@@ -5,6 +5,33 @@ import { getAuthUser } from "../../../../lib/jwt";
 import { inactiveAccountResponse } from '../../../../lib/account';
 import { ObjectId } from "mongodb";
 
+// Plausible human ranges; rejects negative, absurd or non-numeric readings before they are stored
+const RANGES = {
+  height: [50, 260, "Height must be between 50 and 260 cm"],
+  weight: [2, 500, "Weight must be between 2 and 500 kg"],
+  heartRate: [20, 250, "Heart rate must be between 20 and 250 bpm"],
+  glucoseLevel: [20, 900, "Glucose must be between 20 and 900 mg/dL"],
+};
+
+function validateVitals(data) {
+  for (const [field, [min, max, message]] of Object.entries(RANGES)) {
+    const raw = data[field];
+    if (raw === undefined || raw === null || raw === "") continue;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < min || value > max) return message;
+  }
+  const bp = data.bloodPressure;
+  if (bp !== undefined && bp !== null && bp !== "") {
+    const match = /^(\d{2,3})\/(\d{2,3})$/.exec(String(bp).trim());
+    const systolic = match ? Number(match[1]) : 0;
+    const diastolic = match ? Number(match[2]) : 0;
+    if (!match || systolic < 50 || systolic > 300 || diastolic < 30 || diastolic > 200 || systolic <= diastolic) {
+      return "Blood pressure must look like 120/80 with a realistic systolic and diastolic value";
+    }
+  }
+  return "";
+}
+
 export async function POST(request) {
   try {
     // Verify authentication; the profile being updated is always the caller's own
@@ -26,6 +53,11 @@ export async function POST(request) {
         { error: "Profile data is required" },
         { status: 400 }
       );
+    }
+
+    const invalid = validateVitals(profileData);
+    if (invalid) {
+      return NextResponse.json({ error: invalid }, { status: 400 });
     }
 
     const conn = await tryConnectToDatabase();

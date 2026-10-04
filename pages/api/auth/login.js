@@ -54,6 +54,13 @@ export default async function handler(req, res) {
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
         type: user.userType,
+        phone: user.phone || '',
+        dateOfBirth: user.dateOfBirth || '',
+        gender: user.gender || '',
+        bloodType: user.bloodType || '',
+        allergies: user.allergies || '',
+        medicalConditions: user.medicalConditions || '',
+        medications: user.medications || '',
         token
       }
     });

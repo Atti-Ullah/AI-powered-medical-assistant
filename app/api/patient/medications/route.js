@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { tryConnectToDatabase } from '../../../../lib/mongodb';
-import { getMedications, addMedication } from '../../../../lib/static-data';
+import { getMedications, addMedication, removeMedication } from '../../../../lib/static-data';
 import { verifyToken } from '../../../../lib/jwt';
 import { inactiveAccountResponse } from '../../../../lib/account';
 
@@ -162,4 +163,44 @@ export async function POST(request) {
       { status: 500 }
     );
   }
-} 
+}
+
+// DELETE endpoint: remove one of the signed-in patient's medications (?id=...)
+export async function DELETE(request) {
+  try {
+    const token = request.headers.get('authorization')?.split(' ')[1];
+    if (!token) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+    const verified = verifyToken(token);
+    if (!verified) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+    const inactive = await inactiveAccountResponse(verified);
+    if (inactive) return inactive;
+
+    const id = new URL(request.url).searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Medication id is required' }, { status: 400 });
+    }
+
+    const conn = await tryConnectToDatabase();
+    if (!conn) {
+      const removed = removeMedication(verified.id, id);
+      if (!removed) return NextResponse.json({ error: 'Medication not found' }, { status: 404 });
+      return NextResponse.json({ success: true, fallback: true });
+    }
+
+    // Stored ids are ObjectIds in MongoDB; also accept string ids
+    const filters = [{ _id: id, userId: verified.id }];
+    if (ObjectId.isValid(id)) filters.push({ _id: new ObjectId(id), userId: verified.id });
+    const result = await conn.db.collection('medications').deleteOne({ $or: filters });
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Medication not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting medication:', error);
+    return NextResponse.json({ error: 'Failed to delete medication' }, { status: 500 });
+  }
+}

@@ -254,6 +254,7 @@ export default function AdminDashboardContent() {
                 ))}
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
                 <thead>
                   <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -310,6 +311,7 @@ export default function AdminDashboardContent() {
                   )}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         )}

@@ -117,9 +117,23 @@ export default function MedicationsPage() {
   };
 
   const handleDelete = async (id) => {
-    // This would be implemented with a DELETE API endpoint
-    // For now, we'll just update the UI
-    setMedications(medications.filter((med) => med._id !== id));
+    if (!window.confirm('Remove this medication from your list?')) return;
+    setError(null);
+    try {
+      const token = await getToken();
+      const response = await fetch(`/api/patient/medications?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to remove medication');
+      }
+      setMedications((prev) => prev.filter((med) => String(med._id) !== String(id)));
+    } catch (err) {
+      console.error('Error removing medication:', err);
+      setError(err.message || 'Failed to remove medication. Please try again.');
+    }
   };
 
   const activeMedications = medications.filter((med) => med.active);
@@ -362,7 +376,7 @@ export default function MedicationsPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {activeMedications.map((medication) => (
-                          <tr key={medication.id} className="hover:bg-gray-50">
+                          <tr key={medication._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="font-medium text-gray-900">{medication.name}</div>
                               <div className="text-sm text-gray-500">
@@ -393,7 +407,7 @@ export default function MedicationsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                               <button
-                                onClick={() => handleDelete(medication.id)}
+                                onClick={() => handleDelete(medication._id)}
                                 className="text-red-600 hover:text-red-900"
                               >
                                 Remove
@@ -442,7 +456,7 @@ export default function MedicationsPage() {
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
                         {pastMedications.map((medication) => (
-                          <tr key={medication.id} className="hover:bg-gray-50">
+                          <tr key={medication._id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="font-medium text-gray-900">{medication.name}</div>
                               <div className="text-sm text-gray-500">

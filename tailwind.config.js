@@ -110,14 +110,12 @@ module.exports = {
         sans: ["var(--font-inter)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
         heading: ["var(--font-jakarta)", "var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
+      // xs, sm and base follow the design tokens. lg and up use Tailwind's standard scale: the
+      // earlier oversized overrides (xl 28px, 2xl 40px, 3xl 56px) made dashboard headings huge.
       fontSize: {
         xs: "var(--text-xs)",
         sm: "var(--text-sm)",
         base: "var(--text-base)",
-        lg: "var(--text-lg)",
-        xl: "var(--text-xl)",
-        "2xl": "var(--text-2xl)",
-        "3xl": "var(--text-3xl)",
       },
       boxShadow: {
         raised: "var(--shadow-raised)",
