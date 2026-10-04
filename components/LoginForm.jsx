@@ -1,16 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  EnvelopeIcon,
+  ExclamationCircleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  LockClosedIcon,
+} from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
+
+// Messages for errors sent back from the Google/GitHub sign-in flow (?error=...)
+const OAUTH_ERRORS = {
+  oauth_not_configured: "This sign-in method isn't available yet. Please use your email and password.",
+  oauth_unknown_provider: "That sign-in method isn't supported.",
+  oauth_cancelled: "Sign-in was cancelled. You can try again or use your email and password.",
+  oauth_failed: "We couldn't sign you in with that account. Please try again.",
+  oauth_unverified_email: "Your account's email address isn't verified, so we can't use it to sign in.",
+  oauth_patient_only: "Doctor and admin accounts must sign in with their email and password.",
+  oauth_suspended: "This account has been suspended. Please contact an administrator.",
+};
+
+const roles = [
+  { value: "patient", label: "Patient" },
+  { value: "doctor", label: "Doctor" },
+  { value: "admin", label: "Admin" },
+];
 
 export default function LoginForm() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [userType, setUserType] = useState("patient");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Show the reason when returning from a failed Google/GitHub sign-in
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("error");
+    if (code && OAUTH_ERRORS[code]) {
+      setError(OAUTH_ERRORS[code]);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,144 +127,189 @@ export default function LoginForm() {
     }
   };
 
+  const inputClass =
+    "block w-full rounded-lg border-0 bg-white py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 transition placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600";
+
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Sign in to your account
-        </h2>
+    <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12">
+      <div>
+        <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-gray-900">
+          Welcome back
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          Sign in to continue to your Medisynix account.
+        </p>
       </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white px-6 py-8 shadow sm:rounded-lg sm:px-12">
-          {error && (
-            <div className="mb-4 rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-700">{error}</div>
-            </div>
-          )}
+      {error && (
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-3 rounded-lg bg-red-50 p-3.5 ring-1 ring-inset ring-red-200"
+        >
+          <ExclamationCircleIcon
+            className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+            aria-hidden="true"
+          />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
 
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Email address
-              </label>
-              <div className="mt-2">
+      <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+        <fieldset>
+          <legend className="block text-sm font-medium leading-6 text-gray-900">
+            I am signing in as
+          </legend>
+          <div className="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
+            {roles.map((role) => (
+              <label key={role.value} className="cursor-pointer">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                Password
-              </label>
-              <div className="mt-2">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
-                  placeholder="Enter your password"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="user-type"
-                className="block text-sm font-medium leading-6 text-gray-900"
-              >
-                User Type
-              </label>
-              <div className="mt-2">
-                <select
-                  id="user-type"
+                  type="radio"
                   name="user-type"
-                  value={userType}
+                  value={role.value}
+                  checked={userType === role.value}
                   onChange={(e) => setUserType(e.target.value)}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6 px-2"
-                >
-                  <option value="patient">User</option>
-                  <option value="doctor">Doctor</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                  className="peer sr-only"
                 />
-                <label
-                  htmlFor="remember-me"
-                  className="ml-3 block text-sm leading-6 text-gray-900"
-                >
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm leading-6">
-                <Link
-                  href="/forgot-password"
-                  className="font-semibold text-primary-600 hover:text-primary-500"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full justify-center rounded-md bg-primary-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:opacity-75"
-              >
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-white px-2 text-gray-500">
-                  Or continue with
+                <span className="block rounded-lg px-3 py-2 text-center text-sm font-medium text-gray-600 transition hover:text-gray-900 peer-checked:bg-white peer-checked:text-primary-700 peer-checked:shadow-sm peer-focus-visible:ring-2 peer-focus-visible:ring-primary-600">
+                  {role.label}
                 </span>
-              </div>
-            </div>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <a
-                href="#"
-                className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-              >
-                <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium leading-6 text-gray-900"
+          >
+            Email address
+          </label>
+          <div className="relative mt-2">
+            <EnvelopeIcon
+              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`${inputClass} pl-10 pr-3`}
+              placeholder="you@example.com"
+            />
+          </div>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-sm font-semibold text-primary-600 hover:text-primary-500"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative mt-2">
+            <LockClosedIcon
+              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`${inputClass} pl-10 pr-11`}
+              placeholder="Enter your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-0 flex items-center rounded-r-lg pr-3 text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:text-primary-600"
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <EyeIcon className="h-5 w-5" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center">
+          <input
+            id="remember-me"
+            name="remember-me"
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+          />
+          <label
+            htmlFor="remember-me"
+            className="ml-2.5 block text-sm leading-6 text-gray-700"
+          >
+            Remember me
+          </label>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2.5 text-sm font-semibold text-white shadow-raised transition hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-75"
+        >
+          {loading && (
+            <svg
+              className="h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+          )}
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
+      </form>
+
+      <div className="mt-8">
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="bg-white px-3 text-gray-500">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <a href="/api/auth/oauth/google/start" className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+            <svg className="h-5 w-5" aria-hidden="true" viewBox="0 0 24 24">
                   <path
                     d="M12.0003 4.75C13.7703 4.75 15.3553 5.36002 16.6053 6.54998L20.0353 3.12C17.9503 1.89 15.2353 1 12.0003 1C7.31028 1 3.25527 3.84 1.28027 7.65L5.27028 10.71C6.29028 7.28 8.91528 4.75 12.0003 4.75Z"
                     fill="#EA4335"
@@ -248,14 +327,10 @@ export default function LoginForm() {
                     fill="#34A853"
                   />
                 </svg>
-                <span className="text-sm font-medium">Google</span>
-              </a>
-
-              <a
-                href="#"
-                className="flex w-full items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
-              >
-                <svg
+            <span>Google</span>
+          </a>
+          <a href="/api/auth/oauth/github/start" className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-semibold text-gray-900 shadow-sm transition hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600">
+            <svg
                   className="h-5 w-5 fill-[#24292F]"
                   aria-hidden="true"
                   fill="currentColor"
@@ -267,22 +342,20 @@ export default function LoginForm() {
                     clipRule="evenodd"
                   />
                 </svg>
-                <span className="text-sm font-medium">GitHub</span>
-              </a>
-            </div>
-          </div>
+            <span>GitHub</span>
+          </a>
         </div>
-
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Not a member?{" "}
-          <Link
-            href="/register"
-            className="font-semibold leading-6 text-primary-600 hover:text-primary-500"
-          >
-            Create an account
-          </Link>
-        </p>
       </div>
+
+      <p className="mt-8 text-center text-sm text-gray-600">
+        Don&apos;t have an account?{" "}
+        <Link
+          href="/register"
+          className="font-semibold text-primary-600 hover:text-primary-500"
+        >
+          Create an account
+        </Link>
+      </p>
     </div>
   );
 }

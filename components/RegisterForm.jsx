@@ -1,7 +1,69 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import {
+  EnvelopeIcon,
+  ExclamationCircleIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  InformationCircleIcon,
+  LockClosedIcon,
+  UserIcon,
+} from "@heroicons/react/24/outline";
 import { useAuth } from "../contexts/AuthContext";
+
+const baseInputClass =
+  "block w-full rounded-lg border-0 bg-white py-2.5 text-sm text-gray-900 shadow-sm ring-1 ring-inset transition placeholder:text-gray-400 focus:ring-2 focus:ring-inset";
+
+const inputClass = (hasError) =>
+  `${baseInputClass} ${
+    hasError
+      ? "ring-red-300 focus:ring-red-500"
+      : "ring-gray-300 focus:ring-primary-600"
+  }`;
+
+function FieldError({ children }) {
+  if (!children) return null;
+  return <p className="mt-1.5 text-sm text-red-600">{children}</p>;
+}
+
+function PasswordInput({ id, name, value, onChange, hasError, placeholder }) {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <div className="relative mt-2">
+      <LockClosedIcon
+        className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+        aria-hidden="true"
+      />
+      <input
+        id={id}
+        name={name}
+        type={visible ? "text" : "password"}
+        autoComplete="new-password"
+        required
+        className={`${inputClass(hasError)} pl-10 pr-11`}
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
+        className="absolute inset-y-0 right-0 flex items-center rounded-r-lg pr-3 text-gray-400 hover:text-gray-600 focus-visible:outline-none focus-visible:text-primary-600"
+      >
+        {visible ? (
+          <EyeSlashIcon className="h-5 w-5" aria-hidden="true" />
+        ) : (
+          <EyeIcon className="h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
+    </div>
+  );
+}
 
 export default function RegisterForm() {
   const { login } = useAuth();
@@ -91,7 +153,7 @@ export default function RegisterForm() {
       return;
     }
 
-    // setIsSubmitting(true);
+    setIsSubmitting(true);
 
     try {
       // Use the new API endpoint path
@@ -128,205 +190,249 @@ export default function RegisterForm() {
     }
   };
 
+  // Only the first unmet password rule is shown at a time
+  const passwordError =
+    formErrors.password ||
+    formErrors.lowerCase ||
+    formErrors.upperCase ||
+    formErrors.number ||
+    formErrors.specialCharacter;
+
   return (
-    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12">
+      <div>
+        <h1 className="text-[1.75rem] font-bold leading-tight tracking-tight text-gray-900">
+          Create your account
+        </h1>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          Join Medisynix in a minute. It&apos;s free for patients.
+        </p>
+      </div>
+
       {formErrors.general && (
-        <div className="rounded-md bg-red-50 p-4">
-          <div className="text-sm text-red-700">{formErrors.general}</div>
+        <div
+          role="alert"
+          className="mt-6 flex items-start gap-3 rounded-lg bg-red-50 p-3.5 ring-1 ring-inset ring-red-200"
+        >
+          <ExclamationCircleIcon
+            className="mt-0.5 h-5 w-5 shrink-0 text-red-500"
+            aria-hidden="true"
+          />
+          <p className="text-sm text-red-700">{formErrors.general}</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-        <div>
-          <label
-            htmlFor="firstName"
-            className="block text-sm font-medium text-gray-700"
-          >
-            First name
-          </label>
-          <div className="mt-1">
-            <input
-              type="text"
-              name="firstName"
-              id="firstName"
-              autoComplete="given-name"
-              className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${formErrors.firstName ? "ring-red-300" : "ring-gray-300"
-                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-              value={formData.firstName}
-              onChange={handleChange}
-            />
-            {formErrors.firstName && (
-              <p className="mt-1 text-sm text-red-600">
-                {formErrors.firstName}
-              </p>
-            )}
+      <form className="mt-8 space-y-5" onSubmit={handleSubmit} noValidate>
+        <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+          <div>
+            <label
+              htmlFor="firstName"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              First name
+            </label>
+            <div className="relative mt-2">
+              <UserIcon
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                name="firstName"
+                id="firstName"
+                autoComplete="given-name"
+                className={`${inputClass(formErrors.firstName)} pl-10 pr-3`}
+                placeholder="First name"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+            </div>
+            <FieldError>{formErrors.firstName}</FieldError>
+          </div>
+
+          <div>
+            <label
+              htmlFor="lastName"
+              className="block text-sm font-medium leading-6 text-gray-900"
+            >
+              Last name
+            </label>
+            <div className="relative mt-2">
+              <UserIcon
+                className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+                aria-hidden="true"
+              />
+              <input
+                type="text"
+                name="lastName"
+                id="lastName"
+                autoComplete="family-name"
+                className={`${inputClass(formErrors.lastName)} pl-10 pr-3`}
+                placeholder="Last name"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+            </div>
+            <FieldError>{formErrors.lastName}</FieldError>
           </div>
         </div>
 
         <div>
           <label
-            htmlFor="lastName"
-            className="block text-sm font-medium text-gray-700"
+            htmlFor="email"
+            className="block text-sm font-medium leading-6 text-gray-900"
           >
-            Last name
+            Email address
           </label>
-          <div className="mt-1">
+          <div className="relative mt-2">
+            <EnvelopeIcon
+              className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400"
+              aria-hidden="true"
+            />
             <input
-              type="text"
-              name="lastName"
-              id="lastName"
-              autoComplete="family-name"
-              className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${formErrors.lastName ? "ring-red-300" : "ring-gray-300"
-                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-              value={formData.lastName}
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              className={`${inputClass(formErrors.email)} pl-10 pr-3`}
+              placeholder="you@example.com"
+              value={formData.email}
               onChange={handleChange}
             />
-            {formErrors.lastName && (
-              <p className="mt-1 text-sm text-red-600">{formErrors.lastName}</p>
-            )}
           </div>
+          <FieldError>{formErrors.email}</FieldError>
         </div>
-      </div>
 
-      <div>
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Email address
-        </label>
-        <div className="mt-1">
-          <input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${formErrors.email ? "ring-red-300" : "ring-gray-300"
-              } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-            value={formData.email}
-            onChange={handleChange}
-          />
-          {formErrors.email && (
-            <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
-          )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
-        </label>
-        <div className="mt-1">
-          <input
+        <div>
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium leading-6 text-gray-900"
+          >
+            Password
+          </label>
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${formErrors.password ? "ring-red-300" : "ring-gray-300"
-              } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
             value={formData.password}
             onChange={handleChange}
+            hasError={!!passwordError}
+            placeholder="Create a password"
           />
-          {(formErrors.password ||
-            formErrors.lowerCase ||
-            formErrors.upperCase ||
-            formErrors.number ||
-            formErrors.specialCharacter) && (
-              <p className="mt-1 text-sm text-red-600">
-                {formErrors.password
-                  ? formErrors.password
-                  : formErrors.lowerCase
-                    ? formErrors.lowerCase
-                    : formErrors.upperCase
-                      ? formErrors.upperCase
-                      : formErrors.number
-                        ? formErrors.number
-                        : formErrors.specialCharacter}
-              </p>
-            )}
-        </div>
-      </div>
-
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Confirm password
-        </label>
-        <div className="mt-1">
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            className={`block w-full rounded-md border-0 py-1.5 px-3 shadow-sm ring-1 ring-inset ${formErrors.confirmPassword ? "ring-red-300" : "ring-gray-300"
-              } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary-600 sm:text-sm sm:leading-6`}
-            value={formData.confirmPassword}
-            onChange={handleChange}
-          />
-          {formErrors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600">
-              {formErrors.confirmPassword}
+          {passwordError ? (
+            <FieldError>{passwordError}</FieldError>
+          ) : (
+            <p className="mt-1.5 text-xs text-gray-500">
+              Use 8+ characters with upper and lower case letters, a number and
+              a symbol.
             </p>
           )}
         </div>
-      </div>
 
-      <p className="text-sm text-gray-600">
-        You are registering as a patient. Doctor and administrator accounts are
-        created by the Medisynix admin team.
-      </p>
-
-      <div className="flex items-center">
-        <input
-          id="agreeToTerms"
-          name="agreeToTerms"
-          type="checkbox"
-          className={`h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-600 ${formErrors.agreeToTerms ? "border-red-300" : "border-gray-300"
-            }`}
-          checked={formData.agreeToTerms}
-          onChange={handleChange}
-        />
-        <label
-          htmlFor="agreeToTerms"
-          className="ml-2 block text-sm text-gray-900"
-        >
-          I agree to the{" "}
-          <a
-            href="#"
-            className="font-medium text-primary-600 hover:text-primary-500"
+        <div>
+          <label
+            htmlFor="confirmPassword"
+            className="block text-sm font-medium leading-6 text-gray-900"
           >
-            Terms
-          </a>{" "}
-          and{" "}
-          <a
-            href="#"
-            className="font-medium text-primary-600 hover:text-primary-500"
-          >
-            Privacy Policy
-          </a>
-        </label>
-      </div>
-      {formErrors.agreeToTerms && (
-        <p className="mt-1 text-sm text-red-600">{formErrors.agreeToTerms}</p>
-      )}
+            Confirm password
+          </label>
+          <PasswordInput
+            id="confirmPassword"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            hasError={!!formErrors.confirmPassword}
+            placeholder="Re-enter your password"
+          />
+          <FieldError>{formErrors.confirmPassword}</FieldError>
+        </div>
 
-      <div>
+        <div className="flex items-start gap-3 rounded-lg bg-primary-50 p-3.5 ring-1 ring-inset ring-primary-100">
+          <InformationCircleIcon
+            className="mt-0.5 h-5 w-5 shrink-0 text-primary-600"
+            aria-hidden="true"
+          />
+          <p className="text-sm leading-5 text-primary-900">
+            You are registering as a patient. Doctor and administrator accounts
+            are created by the Medisynix admin team.
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-start">
+            <input
+              id="agreeToTerms"
+              name="agreeToTerms"
+              type="checkbox"
+              className={`mt-1 h-4 w-4 rounded text-primary-600 focus:ring-primary-600 ${
+                formErrors.agreeToTerms ? "border-red-400" : "border-gray-300"
+              }`}
+              checked={formData.agreeToTerms}
+              onChange={handleChange}
+            />
+            <label
+              htmlFor="agreeToTerms"
+              className="ml-2.5 block text-sm leading-6 text-gray-700"
+            >
+              I agree to the{" "}
+              <a
+                href="#"
+                className="font-semibold text-primary-600 hover:text-primary-500"
+              >
+                Terms
+              </a>{" "}
+              and{" "}
+              <a
+                href="#"
+                className="font-semibold text-primary-600 hover:text-primary-500"
+              >
+                Privacy Policy
+              </a>
+            </label>
+          </div>
+          <FieldError>{formErrors.agreeToTerms}</FieldError>
+        </div>
+
         <button
           type="submit"
-          className="flex w-full justify-center rounded-md bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600"
           disabled={isSubmitting}
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2.5 text-sm font-semibold text-white shadow-raised transition hover:bg-primary-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 disabled:cursor-not-allowed disabled:opacity-75"
         >
+          {isSubmitting && (
+            <svg
+              className="h-4 w-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+          )}
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
-      </div>
-    </form>
+      </form>
+
+      <p className="mt-8 text-center text-sm text-gray-600">
+        Already have an account?{" "}
+        <Link
+          href="/login"
+          className="font-semibold text-primary-600 hover:text-primary-500"
+        >
+          Sign in
+        </Link>
+      </p>
+    </div>
   );
 }

@@ -376,6 +376,7 @@ export const AuthProvider = ({ children }) => {
       "/register",
       "/forgot-password",
       "/reset-password",
+      "/auth/callback",
       "/job-description",
       "/white-paper",
       "/nda-doc",

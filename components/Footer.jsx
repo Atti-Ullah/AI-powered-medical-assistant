@@ -143,13 +143,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-16 flex flex-col items-start justify-between gap-4 border-t border-slate-800 pt-8 sm:flex-row sm:items-center">
           <p className="text-xs text-slate-500">
-            © {new Date().getFullYear()} Medisynix. Academic project — not a
-            substitute for professional medical care.
-          </p>
-          <p className="text-xs text-slate-500">
-            Built with <span className="text-slate-300">Next.js</span>,{" "}
-            <span className="text-slate-300">MongoDB</span> &amp;{" "}
-            <span className="text-slate-300">Chatbase</span>
+            © {new Date().getFullYear()} Medisynix. All rights reserved.
           </p>
         </div>
       </div>
