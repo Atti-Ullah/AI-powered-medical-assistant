@@ -42,7 +42,7 @@ export default function Disclaimer() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-gray-500">
             Trust &amp; safety
           </h2>
-          <p className="mt-3 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <p className="mt-3 font-heading text-[1.75rem] font-bold tracking-tight text-gray-900 sm:text-[2rem]">
             Informational assistance, with clear guardrails
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function Disclaimer() {
               >
                 {item.icon}
               </span>
-              <h3 className="mt-5 text-lg font-bold text-gray-900">
+              <h3 className="mt-5 text-[1.125rem] font-bold text-gray-900">
                 {item.title}
               </h3>
               <p className="mt-3 text-base leading-7 text-gray-600">

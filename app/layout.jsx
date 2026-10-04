@@ -1,8 +1,15 @@
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import ClientLayout from "../components/ClientLayout";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Body text: Inter. Headings and display text: Plus Jakarta Sans.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  variable: "--font-jakarta",
+  display: "swap",
+});
 
 export const metadata = {
   title: "Medisynix - AI-Powered Healthcare Platform",
@@ -44,7 +51,7 @@ export default function RootLayout({ children }) {
         <meta name="msapplication-TileColor" content="#ffffff" />
         <meta name="theme-color" content="#ffffff" />
       </head>
-      <body className={inter.className} suppressHydrationWarning>
+      <body className={`${inter.variable} ${jakarta.variable} font-sans`} suppressHydrationWarning>
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>

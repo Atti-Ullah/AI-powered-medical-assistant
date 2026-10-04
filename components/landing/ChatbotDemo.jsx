@@ -23,10 +23,10 @@ export default function ChatbotDemo() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-accent-600">
             Try the AI Assistant
           </h2>
-          <p className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
+          <p className="mt-3 font-heading text-[2rem] font-bold tracking-tight text-gray-900">
             Ask it live. It&apos;s trained on real hospital knowledge.
           </p>
-          <p className="mt-4 text-lg leading-8 text-gray-600">
+          <p className="mt-4 text-[1.0625rem] leading-8 text-gray-600">
             This is the production assistant running on Chatbase, focused on
             the Aga Khan University Hospital and Al Shifa Hospital knowledge
             bases. Try one of the questions below.

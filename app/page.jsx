@@ -5,6 +5,7 @@ import HowItWorks from "../components/landing/HowItWorks";
 import ChatbotDemo from "../components/landing/ChatbotDemo";
 import TestimonialsSection from "../components/landing/TestimonialsSection";
 import Disclaimer from "../components/landing/Disclaimer";
+import ContactSection from "../components/landing/ContactSection";
 
 export default function HomePage() {
   return (
@@ -16,6 +17,7 @@ export default function HomePage() {
       <ChatbotDemo />
       <TestimonialsSection />
       <Disclaimer />
+      <ContactSection />
     </div>
   );
 }

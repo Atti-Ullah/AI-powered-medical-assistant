@@ -202,10 +202,10 @@ export default function FeaturesSection() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-600">
             Features
           </h2>
-          <p className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
+          <p className="mt-3 font-heading text-[2rem] font-bold tracking-tight text-gray-900">
             A real clinical assistant, not a chat toy
           </p>
-          <p className="mt-4 text-lg leading-8 text-gray-600">
+          <p className="mt-4 text-[1.0625rem] leading-8 text-gray-600">
             Every feature ships a working interface — from diagnostic guidance
             to hospital lookup — so you can judge the experience for yourself.
           </p>
@@ -235,7 +235,7 @@ export default function FeaturesSection() {
                   </svg>
                 </span>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-[1.375rem] font-bold text-gray-900">
                     {feature.title}
                   </h3>
                   <p className="mt-2 text-base leading-7 text-gray-600">

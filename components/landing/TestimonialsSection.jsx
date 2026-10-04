@@ -52,7 +52,7 @@ export default function TestimonialsSection() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-600">
             Testimonials
           </h2>
-          <p className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
+          <p className="mt-3 font-heading text-[2rem] font-bold tracking-tight text-gray-900">
             Trusted by patients and clinicians
           </p>
         </div>

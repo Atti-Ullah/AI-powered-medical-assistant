@@ -42,7 +42,7 @@ export default function HowItWorks() {
           <h2 className="text-sm font-semibold uppercase tracking-widest text-brand-600">
             How it works
           </h2>
-          <p className="mt-3 text-4xl font-bold tracking-tight text-gray-900">
+          <p className="mt-3 font-heading text-[2rem] font-bold tracking-tight text-gray-900">
             From question to guidance in three steps
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function HowItWorks() {
                   {step.number}
                 </span>
               </div>
-              <h3 className="mt-6 text-xl font-bold text-gray-900">
+              <h3 className="mt-6 text-[1.375rem] font-bold text-gray-900">
                 {step.title}
               </h3>
               <p className="mt-3 text-base leading-7 text-gray-600">

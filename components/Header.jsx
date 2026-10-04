@@ -323,8 +323,6 @@ export default function Header() {
       { name: "Home", href: "/" },
       { name: "Features", href: "/#features" },
       { name: "How It Works", href: "/#how-it-works" },
-      { name: "Assistant", href: "/#assistant" },
-      { name: "Trust", href: "/#disclaimer" },
       { name: "Contact", href: "/#contact" },
     ];
 

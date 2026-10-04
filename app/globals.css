@@ -107,7 +107,9 @@
   h1,
   h2,
   h3,
-  h4 {
+  h4,
+  .font-heading {
+    font-family: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.025em;
   }
 

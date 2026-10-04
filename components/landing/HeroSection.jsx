@@ -44,13 +44,13 @@ export default function HeroSection() {
               <span className="h-2 w-2 rounded-full bg-accent-500" />
               AI-powered healthcare assistant
             </div>
-            <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 text-4xl font-bold tracking-tight text-gray-900 sm:text-[2.75rem] lg:text-[3.25rem]">
               Clinical answers you can{" "}
               <span className="bg-gradient-to-r from-brand-700 to-accent-600 bg-clip-text text-transparent">
                 trust
               </span>
             </h1>
-            <p className="mt-6 text-xl leading-relaxed text-gray-600">
+            <p className="mt-6 text-[1.25rem] leading-relaxed text-gray-600">
               Medisynix answers your healthcare questions in plain language —
               trained on the Aga Khan University Hospital and Al Shifa Hospital
               knowledge base, with AI explainability on every recommendation.
