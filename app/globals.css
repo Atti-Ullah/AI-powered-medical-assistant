@@ -91,6 +91,8 @@
 
   html {
     scroll-behavior: smooth;
+    /* Keep in-page anchor targets clear of the sticky navbar */
+    scroll-padding-top: 4.5rem;
   }
 
   body {
@@ -202,5 +204,68 @@
   .dark .glass {
     background: rgba(17, 26, 46, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* --- Click feedback ------------------------------------------------------
+   Every button and button-styled link gets a short squash-and-release when it
+   is pressed. It uses the standalone `scale` property inside a keyframe
+   animation, so it never fights with Tailwind transforms or transitions. */
+@keyframes press-feedback {
+  0% {
+    scale: 1;
+  }
+  35% {
+    scale: 0.94;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+a.btn:active,
+.press:active {
+  animation: press-feedback 0.34s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* --- Mobile menu ---------------------------------------------------------- */
+@keyframes menu-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes menu-panel-in {
+  from {
+    opacity: 0.4;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.menu-overlay-enter {
+  animation: menu-overlay-in 0.25s ease-out both;
+}
+
+.menu-panel-enter {
+  animation: menu-panel-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active,
+  a.btn:active,
+  .press:active,
+  .menu-overlay-enter,
+  .menu-panel-enter {
+    animation: none;
   }
 }
