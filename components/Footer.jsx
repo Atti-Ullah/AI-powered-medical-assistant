@@ -9,7 +9,6 @@ const columns = [
       { name: "Features", href: "/#features" },
       { name: "How It Works", href: "/#how-it-works" },
       { name: "Try the Assistant", href: "/#assistant" },
-      { name: "Whitepaper", href: "/white-paper" },
       { name: "Contact", href: "/#contact" },
     ],
   },
