@@ -2,7 +2,8 @@
 // dates so the story works on the day you run it:
 //   - the two "demo-day" visits for Dr. Sarah Johnson are scheduled for TODAY (so "Complete" works)
 //   - everything else keeps its distance from the original snapshot date
-// Usage: npm run demo:reset
+// Usage: npm run demo:reset                      (demo day = today)
+//        npm run demo:reset -- --date 2026-10-05  (prepare in advance for a later demo day)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,7 +15,13 @@ const SNAPSHOT_DAY = "2026-10-04"; // the day the backup was taken
 
 const dayNumber = (iso) => Math.round(Date.parse(iso + "T00:00:00Z") / 86400000);
 const isoFromDay = (n) => new Date(n * 86400000).toISOString().slice(0, 10);
-const today = new Date().toLocaleDateString("en-CA"); // local date, YYYY-MM-DD
+const arg = process.argv.indexOf("--date");
+const requested = arg > -1 ? process.argv[arg + 1] : "";
+if (requested && !/^\d{4}-\d{2}-\d{2}$/.test(requested)) {
+  console.error("Use --date YYYY-MM-DD, for example --date 2026-10-05");
+  process.exit(1);
+}
+const today = requested || new Date().toLocaleDateString("en-CA"); // demo day, YYYY-MM-DD
 const shift = dayNumber(today) - dayNumber(SNAPSHOT_DAY);
 
 for (const file of fs.readdirSync(backup).filter((f) => f.endsWith(".json"))) {
@@ -33,5 +40,5 @@ for (const a of appointments) {
 }
 fs.writeFileSync(file, JSON.stringify(appointments, null, 2));
 
-console.log(`Demo data restored. Today is ${today} (shifted dates by ${shift} day(s)).`);
-console.log("Dr. Sarah Johnson now has 2 visits today; Ayesha Khan can book from tomorrow.");
+console.log(`Demo data restored. Demo day is ${today} (shifted dates by ${shift} day(s)).`);
+console.log("Dr. Sarah Johnson has 2 visits on the demo day; Ayesha Khan can book from the day after.");

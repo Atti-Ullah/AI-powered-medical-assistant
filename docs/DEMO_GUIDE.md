@@ -10,7 +10,8 @@ npm run build        # once, about a minute
 npm start            # http://localhost:3000
 ```
 
-- Run `npm run demo:reset` **on the morning of the demo**: it schedules two visits for Dr. Sarah Johnson on that day, so "Complete visit" works live.
+- To prepare the night before, run `npm run demo:reset -- --date 2026-10-05` (use the demo day's date). Visits then count as "today" on that day, with no internet needed.
+- Or run `npm run demo:reset` **on the morning of the demo**: it schedules two visits for Dr. Sarah Johnson on that day, so "Complete visit" works live.
 - MongoDB is not needed. The app uses local files when the database is not running (the admin Security page says so honestly).
 - Internet is needed for the AI Doctor chat and the fonts.
 - Do not click **Google / GitHub** sign-in: the OAuth keys are not set. Use e-mail and password.
